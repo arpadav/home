@@ -13,6 +13,7 @@
   # --------------------------------------------------
   home.packages = with pkgs; [
     eza
+    fd
     gcc
     git
     ripgrep
