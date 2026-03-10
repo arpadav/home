@@ -1,0 +1,117 @@
+theme = "dracula"
+
+[editor]
+line-number = "relative"
+mouse = true
+bufferline = "multiple"
+true-color = true
+auto-pairs = false
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
+[editor.file-picker]
+hidden = false
+
+[editor.statusline]
+left = ["mode", "spinner", "file-name", "read-only-indicator", "file-modification-indicator"]
+right = ["diagnostics", "selections", "position", "file-encoding", "file-line-ending", "file-type"]
+
+[keys.normal]
+# --------------------------------------------------
+# Alt + q - quit pane
+# --------------------------------------------------
+"A-q" = ":bc"
+# --------------------------------------------------
+# Alt + / - toggle comments
+# tried with Ctrl + / but issue with terminal sending keys
+# --------------------------------------------------
+"A-/" = "toggle_comments"
+"C-/" = "toggle_comments"
+# --------------------------------------------------
+# Ctrl + l - add lines
+# --------------------------------------------------
+"C-l" = [
+  "add_newline_below",
+  "move_line_down",
+  ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
+  "collapse_selection",
+  "toggle_comments",
+]
+"A-\\" = [
+  "add_newline_above",
+  "move_line_up",
+  ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
+  "collapse_selection",
+  "toggle_comments",
+]
+# --------------------------------------------------
+# Ctrl + keys - navigation
+# --------------------------------------------------
+"C-left" = "move_prev_word_start"
+"C-right" = "move_next_word_start"
+# --------------------------------------------------
+# Shift + keys - navigation w/ highlight
+# --------------------------------------------------
+"S-up" = "extend_visual_line_up"
+"S-down" = "extend_visual_line_down"
+"S-left" = "extend_char_left"
+"S-right" = "extend_char_right"
+"C-S-up" = "extend_visual_line_up"
+"C-S-down" = "extend_visual_line_down"
+"C-S-left" = "extend_prev_word_start"
+"C-S-right" = "extend_next_word_end"
+
+[keys.insert]
+# --------------------------------------------------
+# Ctrl + l - add lines
+# --------------------------------------------------
+"C-l" = [
+  "add_newline_below",
+  "move_line_down",
+  ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
+  "collapse_selection",
+  "toggle_comments",
+]
+"A-\\" = [
+  "add_newline_above",
+  "move_line_up",
+  ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
+  "collapse_selection",
+  "toggle_comments",
+]
+# --------------------------------------------------
+# Ctrl + keys - navigation
+# --------------------------------------------------
+"C-left" = "move_prev_word_start"
+"C-right" = "move_next_word_start"
+
+[keys.select]
+# --------------------------------------------------
+# Alt + q - quit pane
+# --------------------------------------------------
+"A-q" = ":bc"
+# --------------------------------------------------
+# Alt + / - toggle comments
+# tried with Ctrl + / but issue with terminal sending keys
+# --------------------------------------------------
+"A-/" = "toggle_comments"
+"C-/" = "toggle_comments"
+# --------------------------------------------------
+# Ctrl + keys - navigation
+# --------------------------------------------------
+"C-left" = "move_prev_word_start"
+"C-right" = "move_next_word_start"
+# --------------------------------------------------
+# Shift + keys - navigation w/ highlight
+# --------------------------------------------------
+"S-up" = "extend_visual_line_up"
+"S-down" = "extend_visual_line_down"
+"S-left" = "extend_char_left"
+"S-right" = "extend_char_right"
+"C-S-up" = "extend_visual_line_up"
+"C-S-down" = "extend_visual_line_down"
+"C-S-left" = "extend_prev_word_start"
+"C-S-right" = "extend_next_word_end"

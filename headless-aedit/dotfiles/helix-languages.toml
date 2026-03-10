@@ -1,0 +1,51 @@
+[[language]]
+name = "toml"
+file-types = ["toml"]
+auto-format = true
+
+[[language]]
+name = "nix"
+language-servers = ["nil"]
+
+[language-server.nil]
+command = "nil"
+
+[[language]]
+name = "bash"
+scope = "source.bash"
+file-types = ["sh", "bash"    ]
+auto-format = true
+formatter = { command = "shfmt", args = ["-i", "4", "-ci"] }
+
+[[language]]
+name = "just"
+language-servers = [
+  "just-lsp",
+]
+
+[[language]]
+name = "rust"
+auto-format = true
+formatter = { command = "rustfmt --edition 2024" }
+language-servers = [
+  "rust-analyzer",
+]
+
+[[language]]
+name = "python"
+auto-format = true
+language-servers = [
+  { name = "pylsp", except-features = [ "format" ] },
+  "ruff",
+]
+
+[language-server.pylsp.config.pylsp.plugins]
+ruff.enabled = true
+autopep8.enabled = false
+flake8.enabled = false
+mccabe.enabled = false
+pycodestyle.enabled = false
+pyflakes.enabled = false
+pylint.enabled = false
+yapf.enabled = false
+
