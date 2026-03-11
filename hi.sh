@@ -83,7 +83,7 @@ fi
 # --------------------------------------------------
 if ! command -v nix >/dev/null 2>&1; then
     step "Installing Nix"
-    QUIET_LOG=/tmp/nix-install.log quiet curl -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes ||
+    QUIET_LOG=/tmp/nix-install.log quiet sh -c 'curl -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes' ||
         die "Nix installation failed (see /tmp/nix-install.log)"
     [ -f "$NIX_SH" ] || die "Nix install finished but $NIX_SH not found"
     . "$HOME/.nix-profile/etc/profile.d/nix.sh"
