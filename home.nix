@@ -1,4 +1,9 @@
-{ inputs, pkgs, lib, ... }:
+{
+  inputs,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   # --------------------------------------------------
@@ -37,8 +42,8 @@
       ls = "eza";
       find = "fd";
       fed = "curl -fsSL https://arpadvoros.com/ed | sh";
-      re = "home-manager switch --flake $ARPAD_HOME_CFG#$USER && source ~/.bashrc";
-      pe = "source ~/.bash_functions && penv $@";
+      re = "home-manager switch --flake \$ARPAD_HOME_CFG#\$USER && source ~/.bashrc && zellij_broadcast";
+      pe = "penv $@";
       hm = "ae $ARPAD_HOME_CFG/home.nix";
     };
 
@@ -61,6 +66,8 @@
     # --------------------------------------------------
     bashrcExtra = ''
       [ -f $HOME/.profile ] && . $HOME/.profile
+      [ -f $HOME/.cargo/env ] && . $HOME/.cargo/env
+      [ -f $HOME/.bash_functions ] && . $HOME/.bash_functions
 
       # linuxbrew
       eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"

@@ -5,6 +5,7 @@
 lines() {
     printf '%*s\n' "${1:-50}" '' | tr ' ' '-'
 }
+
 # --------------------------------------------------
 # custom function to fetch arpad env
 # --------------------------------------------------
@@ -41,4 +42,19 @@ penv() {
     local branch
     branch=$(git -C "$ARPAD_HOME_CFG" rev-parse --abbrev-ref HEAD)
     git -C "$ARPAD_HOME_CFG" push origin "$branch"
+}
+
+# --------------------------------------------------
+# zellij broadcast
+# --------------------------------------------------
+# defaults to sourcing ~/.bashrc
+# --------------------------------------------------
+zellij_broadcast() {
+    CMD="${1:-source $HOME/.bashrc}"
+    for session in $(zellij list-sessions --no-formatting --short); do
+        zellij -s "$session" action toggle-active-sync-tab
+        zellij -s "$session" action write-chars "$CMD"
+        zellij -s "$session" action write 13
+        zellij -s "$session" action toggle-active-sync-tab
+    done
 }
