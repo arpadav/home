@@ -39,41 +39,27 @@
       system = "x86_64-linux";
     };
     # --------------------------------------------------
-    # helper function: builds a home-manager config for
-    # a given user. passes username + homeDirectory into
-    # `home.nix` via `extraSpecialArgs`
+    # user env
     # --------------------------------------------------
-    _mkHome = { username, homeDirectory ? "/home/${username}" }:
-      home-manager.lib.homeManagerConfiguration {
-        inherit pkgs;
-        extraSpecialArgs = { inherit inputs; };
-        # --------------------------------------------------
-        # import home module
-        # --------------------------------------------------
-        modules = [
-          ./home.nix
-          {
-            home.username = builtins.getEnv "USER";
-            home.homeDirectory = builtins.getEnv "HOME";
-            # home.username = username;
-            # home.homeDirectory = homeDirectory;
-            home.stateVersion = "25.11";
-            nixpkgs.overlays = [ rust-overlay.overlays.default ];
-          }
-        ];
-      };
+    username = builtins.getEnv "USER";
+    homeDirectory = builtins.getEnv "HOME";
   in
   {
     # --------------------------------------------------
-    # profiles
+    # create home config using $USER
     # --------------------------------------------------
-    # https://www.chrisportela.com/posts/home-manager-flake/#creating-basic-home-manager-flake-configuration
-    # https://nix-community.github.io/home-manager/index.xhtml#sec-flakes-flake-parts-module
-    # see how define `homeConfigurations`
-    # --------------------------------------------------
-    homeConfigurations = {
-      arpad = _mkHome { username = "arpad"; };
-      arpadav = _mkHome { username = "arpadav"; };
+    homeConfigurations.${username} = home-manager.lib.homeManagerConfiguration {
+      inherit pkgs;
+      extraSpecialArgs = { inherit inputs; };
+      modules = [
+        ./home.nix
+        {
+          home.username = username;
+          home.homeDirectory = homeDirectory;
+          home.stateVersion = "25.11";
+          nixpkgs.overlays = [ rust-overlay.overlays.default ];
+        }
+      ];
     };
   };
 }
