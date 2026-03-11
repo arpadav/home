@@ -103,6 +103,7 @@ QUIET_LOG="/tmp/${SNAME}-install.log" quiet \
     run "$RUNNER" \
     -- \
     switch \
+    -b backup \
     --flake "$FLAKE" \
     --impure \
     --no-write-lock-file ||
