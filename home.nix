@@ -42,7 +42,8 @@
       ls = "eza";
       find = "fd";
       fed = "curl -fsSL https://arpadvoros.com/ed | sh";
-      re = "home-manager switch --flake \$ARPAD_HOME_CFG#\$USER && source ~/.bashrc && zellij_broadcast";
+      re = "home-manager switch --flake \$ARPAD_HOME_CFG#\$USER && rl";
+      rl = "source $HOME/.bashrc";
       pe = "penv $@";
       hm = "ae $ARPAD_HOME_CFG/home.nix";
     };
@@ -69,16 +70,15 @@
       [ -f $HOME/.cargo/env ] && . $HOME/.cargo/env
       [ -f $HOME/.bash_functions ] && . $HOME/.bash_functions
 
-      # linuxbrew
-      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
-
       # nvm
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
       [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 
       # openclaw completion
-      source "$HOME/.openclaw/completions/openclaw.bash"
+      # source "$HOME/.openclaw/completions/openclaw.bash"
+      # linuxbrew
+      # eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
 
       # just completion
       source "$HOME/.config/just/completions/just.bash"
@@ -86,14 +86,15 @@
       # broot
       source "$HOME/.config/broot/launcher/bash/br"
     '';
-  };
 
-  # --------------------------------------------------
-  # env vars
-  # --------------------------------------------------
-  home.sessionVariables = {
-    ARPAD_HOME_CFG = "$HOME/.config/home-manager";
-    PATH = "/usr/local/cuda/bin:$PATH";
-    LD_LIBRARY_PATH = "/usr/local/cuda/lib64:$LD_LIBRARY_PATH";
+    # --------------------------------------------------
+    # env vars - use this over home.sessionVariables
+    # --------------------------------------------------
+    sessionVariables = {
+      ARPAD_HOME_CFG = "$HOME/.config/home-manager";
+      PATH = "/usr/local/cuda/bin:$PATH";
+      LD_LIBRARY_PATH = "/usr/local/cuda/lib64:$LD_LIBRARY_PATH";
+      C_INCLUDE_PATH="/usr/include/x86_64-linux-gnu:$C_INCLUDE_PATH";
+    };
   };
 }
