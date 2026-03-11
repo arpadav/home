@@ -2,6 +2,12 @@
 
 Nix home-manager flake managing my dev environment. Declarative, reproducible setup for shell tools, editor configs, and dev toolchains.
 
+## Remember!
+
+```bash
+ln -s ~/<repo-path> ~/.config/home-manager
+```
+
 ## Quick Start
 
 One-liner to install the full environment on any Linux machine:

@@ -39,27 +39,33 @@
       system = "x86_64-linux";
     };
     # --------------------------------------------------
-    # user env
+    # user options - dont know why this cant be dynamically
+    # defined
     # --------------------------------------------------
-    username = builtins.getEnv "USER";
-    homeDirectory = builtins.getEnv "HOME";
+    users = [
+      "arpad"
+      "arpadav"
+    ];
   in
   {
     # --------------------------------------------------
-    # create home config using $USER
+    # create home config using users
     # --------------------------------------------------
-    homeConfigurations.${username} = home-manager.lib.homeManagerConfiguration {
-      inherit pkgs;
-      extraSpecialArgs = { inherit inputs; };
-      modules = [
-        ./home.nix
-        {
-          home.username = username;
-          home.homeDirectory = homeDirectory;
-          home.stateVersion = "25.11";
-          nixpkgs.overlays = [ rust-overlay.overlays.default ];
-        }
-      ];
-    };
+    homeConfigurations = builtins.listToAttrs (map (u: {
+      name = u;
+      value = home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        extraSpecialArgs = { inherit inputs; };
+        modules = [
+          ./home.nix
+          {
+            home.username = u;
+            home.homeDirectory = "/home/${u}";
+            home.stateVersion = "25.11";
+            nixpkgs.overlays = [ rust-overlay.overlays.default ];
+          }
+        ];
+      };
+    }) users);
   };
 }
