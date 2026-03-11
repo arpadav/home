@@ -46,7 +46,8 @@
       find = "fd";
       fed = "curl -fsSL https://arpadvoros.com/ed | sh";
       re = "home-manager switch --flake $ARPAD_HOME_CFG#$USER";
-      hm = "ae $ARPAD_HOME_CFG";
+      pe = "source ~/.bash_functions && penv $@";
+      hm = "ae $ARPAD_HOME_CFG/home.nix";
     };
 
     # --------------------------------------------------
@@ -67,6 +68,8 @@
     # ~/.bashrc
     # --------------------------------------------------
     bashrcExtra = ''
+      [ -f $HOME/.profile ] && . $HOME/.profile
+
       # linuxbrew
       eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
 
@@ -90,7 +93,7 @@
   # env vars
   # --------------------------------------------------
   home.sessionVariables = {
-    ARPAD_HOME_CFG = "~/.config/home-manager";
+    ARPAD_HOME_CFG = "$HOME/.config/home-manager";
     PATH = "/usr/local/cuda/bin:$PATH";
     LD_LIBRARY_PATH = "/usr/local/cuda/lib64:$LD_LIBRARY_PATH";
   };

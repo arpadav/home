@@ -25,3 +25,27 @@ fenv() {
     git pull || return 1
     re || return 1
 }
+# --------------------------------------------------
+# custom function to push arpad env
+# --------------------------------------------------
+penv() {
+    ARPAD_HOME_CFG="${ARPAD_HOME_CFG:-$HOME/.config/home-manager}"
+    cd "$ARPAD_HOME_CFG" || {
+        echo "Cannot cd to $ARPAD_HOME_CFG"
+        return 1
+    }
+    if [ "$1" != "-m" ] || [ -z "$2" ]; then
+        echo "Usage: penv -m \"commit message\""
+        return 1
+    fi
+    local msg="$2"
+    if [ -z "$(git status --porcelain)" ]; then
+        echo "Nothing to commit"
+        return 0
+    fi
+    git add -A
+    git commit -m "$msg"
+    local branch
+    branch=$(git rev-parse --abbrev-ref HEAD)
+    git push origin "$branch"
+}
