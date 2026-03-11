@@ -19,8 +19,8 @@
   home.packages = with pkgs; [
     eza
     fd
-    gcc
     git
+    go
     nil
     ripgrep
     tmux
@@ -68,6 +68,7 @@
     bashrcExtra = ''
       [ -f $HOME/.profile ] && . $HOME/.profile
       [ -f $HOME/.cargo/env ] && . $HOME/.cargo/env
+      [ -f $HOME/.bash_secrets ] && . $HOME/.bash_secrets
       [ -f $HOME/.bash_functions ] && . $HOME/.bash_functions
 
       # nvm
@@ -92,7 +93,7 @@
     # --------------------------------------------------
     sessionVariables = {
       ARPAD_HOME_CFG = "$HOME/.config/home-manager";
-      PATH = "/usr/local/cuda/bin:$PATH";
+      PATH = "/usr/local/cuda/bin:$HOME/.local/bin:$PATH";
       LD_LIBRARY_PATH = "/usr/local/cuda/lib64:$LD_LIBRARY_PATH";
       C_INCLUDE_PATH="/usr/include/x86_64-linux-gnu:$C_INCLUDE_PATH";
     };
