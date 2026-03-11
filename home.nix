@@ -45,7 +45,7 @@
       ls = "eza";
       find = "fd";
       fed = "curl -fsSL https://arpadvoros.com/ed | sh";
-      re = "home-manager switch --flake $ARPAD_HOME_CFG#$USER";
+      re = "home-manager switch --flake $ARPAD_HOME_CFG#$USER && source ~/.bashrc";
       pe = "source ~/.bash_functions && penv $@";
       hm = "ae $ARPAD_HOME_CFG/home.nix";
     };
