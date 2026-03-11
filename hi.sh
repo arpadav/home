@@ -32,10 +32,11 @@ step() { printf "  ${BLUE}=>${RST} %s...\n" "$1"; }
 die()  { printf "  ${RED}ERROR:${RST} %s\n" "$1" >&2; exit 1; }
 quiet(){
     command -v awk >/dev/null || { "$@"; return $?; }
-    local n=${QUIET_LINES:-3} l=${QUIET_LOG:-/tmp/quiet-$$.log} w=${COLUMNS:-$(tput cols 2>/dev/null||echo 80)} e=$(printf '\033[')
+    local n=${QUIET_LINES:-3} l=${QUIET_LOG:-/tmp/quiet-$$.log} w=${COLUMNS:-$(tput cols 2>/dev/null||echo 128)} e=$(printf '\033[')
     printf ${e}?7l;trap "printf '${e}?7h'" INT TERM
-    "$@" 2>&1|tee "$l"|stdbuf -oL tr '\r' '\n'|awk -Wi -v n="$n" -v w="$w" -v e='\033[' '{m=w-5;b[NR%n]=length($0)>m?substr($0,1,m-1)"…":$0;v=NR<n?NR:n;if(NR<=n)printf"\n";printf e"%dA",v;for(i=0;i<v;i++)printf e"2K  - "e"2;34m%s"e"0m\n",b[(NR-v+1+i)%n]}END{if(v+0){printf e"%dA",v;for(i=0;i<v;i++)printf e"2K\n";printf e"%dA",v}}'&&echo "  done (log: $l)"||{ printf "${e}?7h"; return 1;}
-    printf "${e}?7h"
+    { "$@" 2>&1; echo $?>"${l}.rc"; }|tee "$l"|stdbuf -oL tr '\r' '\n'|awk -Wi -v n="$n" -v w="$w" -v e='\033[' '{m=w-5;b[NR%n]=length($0)>m?substr($0,1,m-1)"…":$0;v=NR<n?NR:n;if(NR<=n)printf"\n";printf e"%dA",v;for(i=0;i<v;i++)printf e"2K  - "e"2;34m%s"e"0m\n",b[(NR-v+1+i)%n]}END{if(v+0){printf e"%dA",v;for(i=0;i<v;i++)printf e"2K\n";printf e"%dA",v}}'
+    local rc=$(cat "${l}.rc" 2>/dev/null||echo 1);rm -f "${l}.rc"
+    [ "$rc" -eq 0 ]&&echo "  done (log: $l)"&&printf "${e}?7h"||{ printf "  ${e}31mFAIL${e}0m (see $l)\n"; printf "${e}?7h"; return "$rc";}
 }
 
 # --------------------------------------------------
@@ -66,6 +67,7 @@ done
 [ -n "$RUNNER" ] || die "--runner is required"
 [ -n "$FLAKE" ] || die "--flake is required"
 [ -n "$NAME" ] || die "--name is required"
+SNAME=$(printf '%s' "$NAME" | tr -cs 'A-Za-z0-9_' '_')
 
 # --------------------------------------------------
 # source nix env if it exists but isn't on PATH
@@ -94,12 +96,17 @@ fi
 # install
 # --------------------------------------------------
 step "Installing ${NAME}"
-QUIET_LOG="/tmp/${NAME}-install.log" quiet nix --log-format raw run "$RUNNER" -- switch \
+export NIX_CONFIG="experimental-features = nix-command flakes"
+QUIET_LOG="/tmp/${SNAME}-install.log" quiet \
+    nix \
+    --log-format raw \
+    run "$RUNNER" \
+    -- \
+    switch \
     --flake "$FLAKE" \
     --impure \
-    --no-write-lock-file \
-    --extra-experimental-features "nix-command flakes" ||
-    die "${NAME} installation failed (see /tmp/${NAME}-install.log)"
+    --no-write-lock-file ||
+    die "${NAME} installation failed (see /tmp/${SNAME}-install.log)"
 
 # --------------------------------------------------
 # done
