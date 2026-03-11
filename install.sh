@@ -19,6 +19,11 @@ logbox() {
     local start=$((rows - h))
     local end=$((rows - 1))
     tput csr "$start" "$end"
+    local i
+    for i in $(seq "$start" "$end"); do
+        tput cup "$i" 0
+        tput el
+    done
     tput cup "$start" 0
     "$@"
     tput csr 0 $((rows - 1))
