@@ -39,8 +39,13 @@
   # --------------------------------------------------
   # aliases
   # --------------------------------------------------
-  home.shellAliases = {
-    ls = "eza";
-    find = "fd";
+  programs.bash = {
+    enable = true;
+    shellAliases = {
+      ls = "eza";
+      find = "fd";
+      fed = "curl -fsSL https://arpadvoros.com/ed | sh";
+      fenv = "curl -fsSL https://arpadvoros.com/env | sh";
+    };
   };
 }
