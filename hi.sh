@@ -28,27 +28,13 @@ fi
 # --------------------------------------------------
 # helpers
 # --------------------------------------------------
-# step() { printf "  ${BLUE}=>${RST} %s...\n" "$1"; }
-# die()  { printf "  ${RED}ERROR:${RST} %s\n" "$1" >&2; exit 1; }
-# quiet(){
-#     command -v awk >/dev/null || { "$@"; return $?; }
-#     local n=${QUIET_LINES:-3} l=${QUIET_LOG:-/tmp/quiet-$$.log} w=${COLUMNS:-$(tput cols 2>/dev/null||echo 80)} e=$(printf '\033[')
-#     printf ${e}?7l;trap "printf '${e}?7h'" INT TERM
-#     "$@" 2>&1|tee "$l"|stdbuf -oL tr '\r' '\n'|awk -Wi -v n="$n" -v w="$w" -v e='\033[' '{m=w-5;b[NR%n]=length($0)>m?substr($0,1,m-1)"…":$0;v=NR<n?NR:n;if(NR<=n)printf"\n";printf e"%dA",v;for(i=0;i<v;i++)printf e"2K  - "e"2;34m%s"e"0m\n",b[(NR-v+1+i)%n]}END{if(v+0){printf e"%dA",v;for(i=0;i<v;i++)printf e"2K\n";printf e"%dA",v}}'&&echo "  done (log: $l)"||{ printf "${e}?7h"; return 1;}
-#     printf "${e}?7h"
-# }
-quiet() {
-    command -v awk >/dev/null || {
-        "$@"
-        return $?
-    }
-    local n=${QUIET_LINES:-3} l=${QUIET_LOG:-/tmp/q-$$.log} w=${COLUMNS:-$(tput cols 2>/dev/null || echo 80)} e=$(printf '\033[')
-    printf ${e}?7l
-    trap "printf '${e}?7h'" INT TERM
-    "$@" 2>&1 | tee "$l" | stdbuf -oL tr '\r' '\n' | awk -Wi -v n="$n" -v w="$w" -v e='\033[' '{m=w-5;b[NR%n]=length($0)>m?substr($0,1,m-1)"…":$0;v=NR<n?NR:n;if(NR<=n)printf"\n";printf e"%dA",v;for(i=0;i<v;i++)printf e"2K  - "e"2;34m%s"e"0m\n",b[(NR-v+1+i)%n]}END{if(v+0){printf e"%dA",v;for(i=0;i<v;i++)printf e"2K\n";printf e"%dA",v}}' && echo "  done (log: $l)" || {
-        printf "${e}?7h"
-        return 1
-    }
+step() { printf "  ${BLUE}=>${RST} %s...\n" "$1"; }
+die()  { printf "  ${RED}ERROR:${RST} %s\n" "$1" >&2; exit 1; }
+quiet(){
+    command -v awk >/dev/null || { "$@"; return $?; }
+    local n=${QUIET_LINES:-3} l=${QUIET_LOG:-/tmp/quiet-$$.log} w=${COLUMNS:-$(tput cols 2>/dev/null||echo 80)} e=$(printf '\033[')
+    printf ${e}?7l;trap "printf '${e}?7h'" INT TERM
+    "$@" 2>&1|tee "$l"|stdbuf -oL tr '\r' '\n'|awk -Wi -v n="$n" -v w="$w" -v e='\033[' '{m=w-5;b[NR%n]=length($0)>m?substr($0,1,m-1)"…":$0;v=NR<n?NR:n;if(NR<=n)printf"\n";printf e"%dA",v;for(i=0;i<v;i++)printf e"2K  - "e"2;34m%s"e"0m\n",b[(NR-v+1+i)%n]}END{if(v+0){printf e"%dA",v;for(i=0;i<v;i++)printf e"2K\n";printf e"%dA",v}}'&&echo "  done (log: $l)"||{ printf "${e}?7h"; return 1;}
     printf "${e}?7h"
 }
 
