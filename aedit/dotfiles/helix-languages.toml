@@ -14,7 +14,6 @@ command = "nil"
 name = "bash"
 scope = "source.bash"
 file-types = ["sh", "bash"    ]
-auto-format = true
 formatter = { command = "shfmt", args = ["-i", "4", "-ci"] }
 
 [[language]]

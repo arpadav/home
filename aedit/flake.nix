@@ -12,7 +12,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     aedit = {
-      url = "github:arpadav/aedit/preparing-for-release";
+      url = "github:arpadav/aedit";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     home-manager = {
