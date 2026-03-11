@@ -16,17 +16,9 @@
     fd
     gcc
     git
+    nil
     ripgrep
     tmux
-    # --------------------------------------------------
-    # rust-overlay additional options
-    # --------------------------------------------------
-    (rust-bin.stable.latest.default.override {
-      extensions = [
-        "rust-src"
-        "rust-analyzer"
-      ];
-    })
   ];
 
   # --------------------------------------------------

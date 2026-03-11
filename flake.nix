@@ -19,10 +19,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   # --------------------------------------------------
@@ -30,7 +26,7 @@
   # `inputs`, as well as other deconstruction. naming
   # matters
   # --------------------------------------------------
-  outputs = inputs @ { nixpkgs, home-manager, rust-overlay, ... }:
+  outputs = inputs @ { nixpkgs, home-manager, ... }:
   let
     # --------------------------------------------------
     # define `pkgs` = x86_64-linux packages from Nix
@@ -62,7 +58,6 @@
             home.username = u;
             home.homeDirectory = "/home/${u}";
             home.stateVersion = "25.11";
-            nixpkgs.overlays = [ rust-overlay.overlays.default ];
           }
         ];
       };
