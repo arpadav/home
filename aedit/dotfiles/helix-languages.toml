@@ -27,7 +27,7 @@ name = "rust"
 auto-format = true
 formatter = { command = "rustfmt", args = ["--edition", "2024"] }
 language-servers = [
-  "helix-assist",
+  "wsf",
   "rust-analyzer",
 ]
 
@@ -49,6 +49,5 @@ pyflakes.enabled = false
 pylint.enabled = false
 yapf.enabled = false
 
-[language-server.helix-assist]
-command = "helix-assist"
-args = ["--handler", "windsurf"]
+[language-server.wsf]
+command = "windsurf-hx"
