@@ -9,6 +9,7 @@
 # --------------------------------------------------
 set -eu
 command -v curl >/dev/null 2>&1 || echo "curl is required but not installed"
+IS_MAC=false; [[ "$OSTYPE" == darwin* ]] && IS_MAC=true
 
 # --------------------------------------------------
 # color support
@@ -30,8 +31,8 @@ fi
 # --------------------------------------------------
 step() { printf "  ${BLUE}=>${RST} %s...\n" "$1"; }
 die()  { printf "  ${RED}ERROR:${RST} %s\n" "$1" >&2; exit 1; }
-quiet(){
-    command -v awk >/dev/null || { "$@"; return $?; }
+quiet() {
+    command -v awk >/dev/null 2>&1 && ! $IS_MAC || { "$@"; return $?; }
     local n=${QUIET_LINES:-3} l=${QUIET_LOG:-/tmp/quiet-$$.log} w=${COLUMNS:-$(tput cols 2>/dev/null||echo 128)} e=$(printf '\033[')
     printf ${e}?7l;trap "printf '${e}?7h'" INT TERM
     { "$@" 2>&1; echo $?>"${l}.rc"; }|tee "$l"|stdbuf -oL tr '\r' '\n'|awk -Wi -v n="$n" -v w="$w" -v e='\033[' '{m=w-5;b[NR%n]=length($0)>m?substr($0,1,m-1)"…":$0;v=NR<n?NR:n;if(NR<=n)printf"\n";printf e"%dA",v;for(i=0;i<v;i++)printf e"2K  - "e"2;34m%s"e"0m\n",b[(NR-v+1+i)%n]}END{if(v+0){printf e"%dA",v;for(i=0;i<v;i++)printf e"2K\n";printf e"%dA",v}}'
@@ -85,7 +86,8 @@ fi
 # --------------------------------------------------
 if ! command -v nix >/dev/null 2>&1; then
     step "Installing Nix"
-    QUIET_LOG=/tmp/nix-install.log quiet sh -c 'curl -L https://nixos.org/nix/install | sh -s -- --no-daemon --yes' ||
+    DAEMON_FLAG=$($IS_MAC && echo "" || echo " --no-daemon")
+    QUIET_LOG=/tmp/nix-install.log quiet sh -c "curl -L https://nixos.org/nix/install | sh -s -- $DAEMON_FLAG --yes" ||
         die "Nix installation failed (see /tmp/nix-install.log)"
     [ -f "$NIX_SH" ] || die "Nix install finished but $NIX_SH not found"
     . "$HOME/.nix-profile/etc/profile.d/nix.sh"
