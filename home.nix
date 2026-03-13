@@ -29,6 +29,7 @@
   # --------------------------------------------------
   home.file = {
     ".config/nix/nix.conf".source = ./nix.conf;
+    ".config/helix/runtime/".source = "${pkgs.helix.runtime}";
   };
 
   programs.bash = {
@@ -38,7 +39,6 @@
     # --------------------------------------------------
     shellAliases = {
       ls = "eza";
-      find = "fd";
       fed = "curl -fsSL https://arpadvoros.com/ed | sh";
       re = "home-manager switch --flake \$ARPAD_HOME_CFG#\$USER && rl";
       rl = "source $HOME/.bashrc";

@@ -37,16 +37,25 @@ right = ["diagnostics", "selections", "position", "file-encoding", "file-line-en
 "C-l" = [
   "add_newline_below",
   "move_line_down",
+  "open_above",
   ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
   "collapse_selection",
   "toggle_comments",
+  "move_line_down",
+  "delete_char_backward",
+  "normal_mode", # keys.{MODE}
 ]
 "A-\\" = [
   "add_newline_above",
   "move_line_up",
+  "open_below",
   ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
   "collapse_selection",
   "toggle_comments",
+  "move_line_up",
+  "delete_char_backward",
+  "move_line_down",
+  "normal_mode", # keys.{MODE}
 ]
 # --------------------------------------------------
 # Ctrl + keys - navigation
@@ -72,22 +81,42 @@ right = ["diagnostics", "selections", "position", "file-encoding", "file-line-en
 "C-l" = [
   "add_newline_below",
   "move_line_down",
+  "open_above",
   ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
   "collapse_selection",
   "toggle_comments",
+  "move_line_down",
+  "delete_char_backward",
+  "insert_mode", # keys.{MODE}
 ]
 "A-\\" = [
   "add_newline_above",
   "move_line_up",
+  "open_below",
   ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
   "collapse_selection",
   "toggle_comments",
+  "move_line_up",
+  "delete_char_backward",
+  "move_line_down",
+  "insert_mode", # keys.{MODE}
 ]
 # --------------------------------------------------
 # Ctrl + keys - navigation
 # --------------------------------------------------
 "C-left" = "move_prev_word_start"
 "C-right" = "move_next_word_start"
+# --------------------------------------------------
+# Shift + keys - navigation w/ highlight
+# --------------------------------------------------
+"S-up" = "extend_visual_line_up"
+"S-down" = "extend_visual_line_down"
+"S-left" = "extend_char_left"
+"S-right" = "extend_char_right"
+"C-S-up" = "extend_visual_line_up"
+"C-S-down" = "extend_visual_line_down"
+"C-S-left" = "extend_prev_word_start"
+"C-S-right" = "extend_next_word_end"
 
 [keys.select]
 # --------------------------------------------------
@@ -100,6 +129,32 @@ right = ["diagnostics", "selections", "position", "file-encoding", "file-line-en
 # --------------------------------------------------
 "A-/" = "toggle_comments"
 "C-/" = "toggle_comments"
+# --------------------------------------------------
+# Ctrl + l - add lines
+# --------------------------------------------------
+"C-l" = [
+  "add_newline_below",
+  "move_line_down",
+  "open_above",
+  ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
+  "collapse_selection",
+  "toggle_comments",
+  "move_line_down",
+  "delete_char_backward",
+  "select_mode", # keys.{MODE}
+]
+"A-\\" = [
+  "add_newline_above",
+  "move_line_up",
+  "open_below",
+  ":insert-output bash -c \"source ~/.bash_functions && echo -n \\\"\\$(lines)\\\"\"",
+  "collapse_selection",
+  "toggle_comments",
+  "move_line_up",
+  "delete_char_backward",
+  "move_line_down",
+  "select_mode", # keys.{MODE}
+]
 # --------------------------------------------------
 # Ctrl + keys - navigation
 # --------------------------------------------------
