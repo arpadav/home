@@ -6,6 +6,7 @@ mouse = true
 bufferline = "multiple"
 true-color = true
 auto-pairs = false
+lsp.display-inlay-hints = true
 
 [editor.cursor-shape]
 insert = "bar"

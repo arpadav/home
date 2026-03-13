@@ -1,5 +1,3 @@
-lsp.display-inlay-hints = true
-
 [[language]]
 name = "toml"
 file-types = ["toml"]
