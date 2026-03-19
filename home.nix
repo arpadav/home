@@ -19,9 +19,14 @@
     fd
     git
     go
+    mosh
     nil
     ripgrep
+    superhtml
     tmux
+    tombi
+    vulkan-tools
+    zed-editor
   ];
 
   # --------------------------------------------------
@@ -93,7 +98,7 @@
       ARPAD_HOME_CFG = "$HOME/.config/home-manager";
       PATH = "$HOME/bin:/usr/local/cuda/bin:$HOME/.local/bin:$PATH";
       LD_LIBRARY_PATH = "/usr/local/cuda/lib64:$LD_LIBRARY_PATH";
-      C_INCLUDE_PATH="/usr/include/x86_64-linux-gnu:$C_INCLUDE_PATH";
+      C_INCLUDE_PATH = "/usr/include/x86_64-linux-gnu:$C_INCLUDE_PATH";
     };
   };
 }
