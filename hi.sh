@@ -43,7 +43,7 @@ quiet() {
 # --------------------------------------------------
 # parse args
 # --------------------------------------------------
-RUNNER="" FLAKE="" NAME="" MSG=""
+RUNNER="" FLAKE="" NAME="" MSG="" FORCE=false
 while [ $# -gt 0 ]; do
     case "$1" in
         --runner)
