@@ -62,6 +62,10 @@ while [ $# -gt 0 ]; do
             MSG="$2"
             shift 2
             ;;
+        --force)
+            FORCE=true
+            shift 1
+            ;;
         *) die "Unknown option: $1" ;;
     esac
 done
@@ -73,18 +77,20 @@ SNAME=$(printf '%s' "$NAME" | tr -cs 'A-Za-z0-9_' '_')
 # --------------------------------------------------
 # source nix env if it exists but isn't on PATH
 # --------------------------------------------------
-step "Checking Nix"
-NIX_SH="$HOME/.nix-profile/etc/profile.d/nix.sh"
-if ! command -v nix >/dev/null 2>&1; then
-    if [ -f "$NIX_SH" ]; then
-        . "$NIX_SH"
+if [ "$FORCE" != true ]; then
+    step "Checking Nix"
+    NIX_SH="$HOME/.nix-profile/etc/profile.d/nix.sh"
+    if ! command -v nix >/dev/null 2>&1; then
+        if [ -f "$NIX_SH" ]; then
+            . "$NIX_SH"
+        fi
     fi
 fi
 
 # --------------------------------------------------
 # if still not found, actuall install
 # --------------------------------------------------
-if ! command -v nix >/dev/null 2>&1; then
+if [ "$FORCE" = true ] || ! command -v nix >/dev/null 2>&1; then
     step "Installing Nix"
     DAEMON_FLAG=$($IS_MAC && echo "" || echo " --no-daemon")
     QUIET_LOG=/tmp/nix-install.log quiet sh -c "curl -L https://nixos.org/nix/install | sh -s -- $DAEMON_FLAG --yes" ||
@@ -93,6 +99,7 @@ if ! command -v nix >/dev/null 2>&1; then
     . "$HOME/.nix-profile/etc/profile.d/nix.sh"
     command -v nix >/dev/null 2>&1 || die "Nix installed but still not on PATH"
 fi
+
 
 # --------------------------------------------------
 # install
