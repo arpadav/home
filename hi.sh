@@ -9,7 +9,7 @@
 # --------------------------------------------------
 set -eu
 command -v curl >/dev/null 2>&1 || echo "curl is required but not installed"
-IS_MAC=false; [[ "$OSTYPE" == darwin* ]] && IS_MAC=true
+IS_MAC=false; [ "${OSTYPE:-}" = darwin* ] && IS_MAC=true
 
 # --------------------------------------------------
 # color support
