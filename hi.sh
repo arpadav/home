@@ -122,5 +122,5 @@ QUIET_LOG="/tmp/${SNAME}-install.log" quiet \
 # done
 # --------------------------------------------------
 step "Done!"
-printf "Remember to run ${GREEN}source ~/.profile$RST\n"
+printf "Remember to run ${GREEN}source ~/.bashrc$RST\n"
 [ -n "$MSG" ] && printf "  %s\n" "$MSG"

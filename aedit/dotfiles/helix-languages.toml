@@ -40,6 +40,7 @@ auto-format = true
 formatter = { command = "rustfmt", args = ["--edition", "2024"] }
 language-servers = [
   "wsf",
+  "lsp-ai",
   "rust-analyzer",
 ]
 
@@ -70,3 +71,6 @@ yapf.enabled = false
 
 [language-server.wsf]
 command = "windsurf-hx"
+
+[language-server.lsp-ai]
+command = "lsp-ai"

@@ -25,8 +25,6 @@
     superhtml
     tmux
     tombi
-    vulkan-tools
-    zed-editor
   ];
 
   # --------------------------------------------------
@@ -37,6 +35,9 @@
     ".config/helix/runtime/".source = "${pkgs.helix.runtime}";
   };
 
+  # --------------------------------------------------
+  # bash config
+  # --------------------------------------------------
   programs.bash = {
     enable = true;
     # --------------------------------------------------
@@ -89,6 +90,9 @@
 
       # broot
       source "$HOME/.config/broot/launcher/bash/br"
+
+      # export pkgconfig path
+      export PKG_CONFIG_PATH=/usr/lib/pkgconfig
     '';
 
     # --------------------------------------------------
