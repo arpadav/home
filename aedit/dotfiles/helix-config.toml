@@ -6,6 +6,7 @@ mouse = true
 bufferline = "multiple"
 true-color = true
 auto-pairs = false
+soft-wrap.enable = true
 lsp.display-inlay-hints = true
 
 [editor.cursor-shape]
@@ -17,8 +18,21 @@ select = "underline"
 hidden = false
 
 [editor.statusline]
-left = ["mode", "spinner", "file-name", "read-only-indicator", "file-modification-indicator"]
-right = ["diagnostics", "selections", "position", "file-encoding", "file-line-ending", "file-type"]
+left = [
+  "mode",
+  "spinner",
+  "file-name",
+  "read-only-indicator",
+  "file-modification-indicator"
+]
+right = [
+  "diagnostics",
+  "selections",
+  "position",
+  "file-encoding",
+  "file-line-ending",
+  "file-type"
+]
 
 [keys.normal]
 # --------------------------------------------------
@@ -47,7 +61,7 @@ right = ["diagnostics", "selections", "position", "file-encoding", "file-line-en
   "toggle_comments",
   "move_line_down",
   "delete_char_backward",
-  "normal_mode", # keys.{MODE}
+  "normal_mode",  # keys.{MODE}
 ]
 "A-\\" = [
   "add_newline_above",
@@ -59,7 +73,7 @@ right = ["diagnostics", "selections", "position", "file-encoding", "file-line-en
   "move_line_up",
   "delete_char_backward",
   "move_line_down",
-  "normal_mode", # keys.{MODE}
+  "normal_mode",  # keys.{MODE}
 ]
 # --------------------------------------------------
 # Ctrl + keys - navigation
@@ -91,7 +105,7 @@ right = ["diagnostics", "selections", "position", "file-encoding", "file-line-en
   "toggle_comments",
   "move_line_down",
   "delete_char_backward",
-  "insert_mode", # keys.{MODE}
+  "insert_mode",  # keys.{MODE}
 ]
 "A-\\" = [
   "add_newline_above",
@@ -103,7 +117,7 @@ right = ["diagnostics", "selections", "position", "file-encoding", "file-line-en
   "move_line_up",
   "delete_char_backward",
   "move_line_down",
-  "insert_mode", # keys.{MODE}
+  "insert_mode",  # keys.{MODE}
 ]
 # --------------------------------------------------
 # Ctrl + keys - navigation
@@ -149,7 +163,7 @@ right = ["diagnostics", "selections", "position", "file-encoding", "file-line-en
   "toggle_comments",
   "move_line_down",
   "delete_char_backward",
-  "select_mode", # keys.{MODE}
+  "select_mode",  # keys.{MODE}
 ]
 "A-\\" = [
   "add_newline_above",
@@ -161,7 +175,7 @@ right = ["diagnostics", "selections", "position", "file-encoding", "file-line-en
   "move_line_up",
   "delete_char_backward",
   "move_line_down",
-  "select_mode", # keys.{MODE}
+  "select_mode",  # keys.{MODE}
 ]
 # --------------------------------------------------
 # Ctrl + keys - navigation

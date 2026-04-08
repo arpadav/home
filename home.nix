@@ -64,6 +64,8 @@
       else
         PS1='\u@\h:\w\$ '
       fi
+
+      export PATH=$HOME/.opencode/bin:$PATH
     '';
 
     # --------------------------------------------------
@@ -79,11 +81,6 @@
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
       [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
-
-      # openclaw completion
-      # source "$HOME/.openclaw/completions/openclaw.bash"
-      # linuxbrew
-      # eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
 
       # just completion
       source "$HOME/.config/just/completions/just.bash"
