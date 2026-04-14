@@ -39,8 +39,6 @@ name = "rust"
 auto-format = true
 formatter = { command = "rustfmt", args = ["--edition", "2024"] }
 language-servers = [
-  "wsf",
-  "lsp-ai",
   "rust-analyzer",
 ]
 
@@ -56,6 +54,9 @@ language-servers = [
 # command = "superhtml"
 # args = ["lsp"]
 
+[language-server.rust-analyzer]
+config = { checkOnSave = { command = "clippy" }, cargo = { allFeatures = true } }
+
 [language-server.nil]
 command = "nil"
 
@@ -68,9 +69,3 @@ pycodestyle.enabled = false
 pyflakes.enabled = false
 pylint.enabled = false
 yapf.enabled = false
-
-[language-server.wsf]
-command = "windsurf-hx"
-
-[language-server.lsp-ai]
-command = "lsp-ai"
