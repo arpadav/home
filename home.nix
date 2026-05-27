@@ -1,5 +1,6 @@
 {
   pkgs,
+  config,
   ...
 }:
 
@@ -15,6 +16,7 @@
   # my home packages
   # --------------------------------------------------
   home.packages = with pkgs; [
+    deno
     eza
     fd
     git
@@ -22,16 +24,23 @@
     mosh
     nil
     ripgrep
+    svelte-language-server
     superhtml
     tmux
     tombi
+    ttyd
   ];
 
   # --------------------------------------------------
   # configs
   # --------------------------------------------------
   home.file = {
-    ".config/nix/nix.conf".source = ./nix.conf;
+    ".config/nix/nix.conf".source =
+      config.lib.file.mkOutOfStoreSymlink
+        "${config.home.homeDirectory}/.config/home-manager/nix.conf";
+    ".claude/agents/aav".source =
+      config.lib.file.mkOutOfStoreSymlink
+        "${config.home.homeDirectory}/.config/home-manager/agents";
     ".config/helix/runtime/".source = "${pkgs.helix.runtime}";
   };
 
@@ -64,8 +73,6 @@
       else
         PS1='\u@\h:\w\$ '
       fi
-
-      export PATH=$HOME/.opencode/bin:$PATH
     '';
 
     # --------------------------------------------------
@@ -92,14 +99,27 @@
       export PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig
     '';
 
-    # --------------------------------------------------
-    # env vars - use this over home.sessionVariables
-    # --------------------------------------------------
-    sessionVariables = {
-      ARPAD_HOME_CFG = "$HOME/.config/home-manager";
-      PATH = "$HOME/bin:/usr/local/cuda/bin:$HOME/.local/bin:$PATH";
-      LD_LIBRARY_PATH = "/usr/local/cuda/lib64:$LD_LIBRARY_PATH";
-      C_INCLUDE_PATH = "/usr/include/x86_64-linux-gnu:$C_INCLUDE_PATH";
-    };
+  };
+
+  # --------------------------------------------------
+  # PATH additions: home.sessionPath lands inside the
+  # sentinel-guarded hm-session-vars.sh, so it's applied
+  # exactly once per session. re-sourcing .profile/.bashrc
+  # (or running `rl`/`re`) can no longer duplicate entries.
+  # --------------------------------------------------
+  home.sessionPath = [
+    "$HOME/bin"
+    "/usr/local/cuda/bin"
+    "$HOME/.local/bin"
+    "$HOME/.opencode/bin"
+  ];
+
+  # --------------------------------------------------
+  # env vars - guarded via hm-session-vars.sh (once/session)
+  # --------------------------------------------------
+  home.sessionVariables = {
+    ARPAD_HOME_CFG = "$HOME/.config/home-manager";
+    LD_LIBRARY_PATH = "/usr/local/cuda/lib64:$LD_LIBRARY_PATH";
+    C_INCLUDE_PATH = "/usr/include/x86_64-linux-gnu:$C_INCLUDE_PATH";
   };
 }

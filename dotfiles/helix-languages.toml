@@ -43,29 +43,43 @@ language-servers = [
 ]
 
 [[language]]
+name = "svelte"
+scope = "source.svelte"
+injection-regex = "svelte"
+file-types = ["svelte"]
+roots = []
+comment-token = "//"
+language-servers = ["svelteserver"]
+
+[[language]]
 name = "python"
 auto-format = true
-language-servers = [
-  { name = "pylsp", except-features = ["format"] },
-  "ruff",
-]
+language-servers = ["ruff", "pylsp"]
 
 # [language-server.superhtml]
 # command = "superhtml"
 # args = ["lsp"]
 
 [language-server.rust-analyzer]
-config = { checkOnSave = { command = "clippy" }, cargo = { allFeatures = true } }
+config = { checkOnSave = true, cargo = { allFeatures = true } }
+
+[language-server.svelteserver]
+command = "svelteserver"
+args = ["--stdio"]
 
 [language-server.nil]
 command = "nil"
 
-[language-server.pylsp.config.pylsp.plugins]
-ruff.enabled = true
-autopep8.enabled = false
-flake8.enabled = false
-mccabe.enabled = false
-pycodestyle.enabled = false
-pyflakes.enabled = false
-pylint.enabled = false
-yapf.enabled = false
+[language-server.ruff]
+command = "ruff"
+args = ["server"]
+
+# [language-server.pylsp.config.pylsp.plugins]
+# ruff.enabled = true
+# autopep8.enabled = false
+# flake8.enabled = false
+# mccabe.enabled = false
+# pycodestyle.enabled = false
+# pyflakes.enabled = false
+# pylint.enabled = false
+# yapf.enabled = false

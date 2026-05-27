@@ -94,6 +94,11 @@ right = [
 
 [keys.insert]
 # --------------------------------------------------
+# delete highlighted
+# --------------------------------------------------
+"del" = ["normal_mode", "delete_selection", "insert_mode"]
+# "backspace" = ["normal_mode", "delete_selection", "insert_mode"]
+# --------------------------------------------------
 # Ctrl + l - add lines
 # --------------------------------------------------
 "C-l" = [

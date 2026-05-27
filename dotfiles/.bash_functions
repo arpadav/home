@@ -43,3 +43,12 @@ penv() {
     branch=$(git -C "$ARPAD_HOME_CFG" rev-parse --abbrev-ref HEAD)
     git -C "$ARPAD_HOME_CFG" push origin "$branch"
 }
+
+plan() {
+    local f
+    f="$(find "$HOME/.claude/plans" -type f -printf '%T@ %p\n' |
+        sort -nr |
+        head -n1 |
+        cut -d' ' -f2-)"
+    [ -n "$f" ] && "${EDITOR:-vim}" "$f"
+}
