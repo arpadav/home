@@ -5,18 +5,13 @@
 }:
 let
   # --------------------------------------------------
-  # brain: arpad's second-brain agents + skills, linked
-  # live so reload-plugins/reload-skills pick up edits
+  # brain: arpad's one transferable second-brain - cards +
+  # scripts + agentic files
   # --------------------------------------------------
-  brain = "${config.home.homeDirectory}/repos/personal/agents/brain";
-  aavBrain = "${config.home.homeDirectory}/repos/personal/aav-brain";
-  # the skills are universal: same SKILL.md in claude, codex, ~/.agents. they
-  # bootstrap the brain by discovery (P32): `brain-find` on PATH (installed below)
-  # resolves $AAV_BRAIN / $AAV_BRAIN_BIN on any machine, so the skills invoke the
-  # scripts via $AAV_BRAIN_BIN - no layout-assuming per-skill symlink.
-  # 4 user ENTRIES (plan/execute/review/self-refine) + 8 brain-meta-* machinery
-  # (the engine + the node-owner skills). all stay registered so the engine can
-  # load the meta skills; the brain-meta- prefix is the "dont call directly" signal.
+  aavBrain = "${config.home.homeDirectory}/repos/personal/home/brain";
+  agentsRoot = "${aavBrain}/agentic-files/agents";
+  skillsRoot = "${aavBrain}/agentic-files/skills";
+  codexAgents = "${aavBrain}/.generated/codex/agents";
   brainSkills = [
     "brain-plan"
     "brain-execute"
@@ -31,23 +26,14 @@ let
     "brain-meta-curate"
     "brain-meta-commit"
   ];
-  # the 2 agents are claude-only frontmatter; codex gets them compiled.
-  brainAgents = [
-    "brain-review-gate"
-    "brain-verifier"
-  ];
-  # build a set of "discovery-path/name" -> live-symlink entries.
   mkLinks = prefix: src: names: builtins.listToAttrs (map (name: {
     name = "${prefix}/${name}";
     value.source = config.lib.file.mkOutOfStoreSymlink "${src}/${name}";
   }) names);
-  # claude reads skills + agents; codex reads skills only (raw skills +
-  # compiled agents); ~/.agents is the modern shared skills location.
   brainLinks =
-    (mkLinks ".claude/skills" "${brain}/skills" brainSkills)
-    // (mkLinks ".agents/skills" "${brain}/skills" brainSkills)
-    // (mkLinks ".codex/skills" "${brain}/skills" brainSkills)
-    // (mkLinks ".codex/skills" "${brain}/compiled/codex" brainAgents);
+    (mkLinks ".claude/skills" skillsRoot brainSkills)
+    // (mkLinks ".agents/skills" skillsRoot brainSkills)
+    // (mkLinks ".codex/skills" skillsRoot brainSkills);
 in
 {
   # --------------------------------------------------
@@ -83,16 +69,19 @@ in
     ".config/nix/nix.conf".source =
       config.lib.file.mkOutOfStoreSymlink
         "${config.home.homeDirectory}/.config/home-manager/nix.conf";
-    ".claude/agents/aav".source =
-      config.lib.file.mkOutOfStoreSymlink
-        "${config.home.homeDirectory}/.config/home-manager/agents";
-    ".claude/agents/brain".source =
-      config.lib.file.mkOutOfStoreSymlink
-        "${brain}/agents";
     ".config/helix/runtime/".source = "${pkgs.helix.runtime}";
-    # brain-find on PATH: the discovery entrypoint every brain skill bootstraps
-    # from (P32), replacing the per-skill scripts/ symlink. exec the live script
-    # so its `import brainlib` resolves from the real bin/ dir.
+    ".claude/agents/brain".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/brain";
+    ".claude/agents/general".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/general";
+    ".claude/agents/rust".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/lang/rust";
+    ".claude/agents/custom".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/custom";
+    ".codex/agents".source =
+      config.lib.file.mkOutOfStoreSymlink codexAgents;
+    ".local/share/aav-brain".source =
+      config.lib.file.mkOutOfStoreSymlink "${aavBrain}/logs";
     ".local/bin/brain-find" = {
       executable = true;
       text = ''
@@ -101,6 +90,19 @@ in
       '';
     };
   };
+
+  # --------------------------------------------------
+  # compile codex TOML agents on every switch, so the
+  # gitignored .generated/ dir stays fresh. $DRY_RUN_CMD is
+  # a no-op echo under `--dry-run`, so a dry run never
+  # writes; a compile failure WARNS but does NOT abort the
+  # switch (stale codex agents beat a bricked activation)
+  # --------------------------------------------------
+  home.activation.brainCompile =
+    config.lib.dag.entryAfter [ "writeBoundary" ] ''
+      $DRY_RUN_CMD ${pkgs.python3}/bin/python3 ${aavBrain}/bin/compile.py \
+        || echo "warn: codex agent compile failed; .generated/ may be stale" >&2
+    '';
 
   # --------------------------------------------------
   # bash config
@@ -179,9 +181,7 @@ in
   # --------------------------------------------------
   home.sessionVariables = {
     ARPAD_HOME_CFG = "$HOME/.config/home-manager";
-    AAV_BRAIN = "$HOME/repos/personal/aav-brain";
-    AAV_BRAIN_BIN = "$HOME/repos/personal/aav-brain/bin";
-    BRAIN_AGENTS = "$HOME/repos/personal/agents/brain";
+    AAV_BRAIN = "$ARPAD_HOME_CFG/brain";
     LD_LIBRARY_PATH = "/usr/local/cuda/lib64:$LD_LIBRARY_PATH";
     C_INCLUDE_PATH = "/usr/include/x86_64-linux-gnu:$C_INCLUDE_PATH";
   };
