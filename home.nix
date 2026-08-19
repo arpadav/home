@@ -54,6 +54,7 @@ in
     go
     mosh
     nil
+    pandoc
     ripgrep
     svelte-language-server
     superhtml
@@ -76,6 +77,8 @@ in
       config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/general";
     ".claude/agents/rust".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/lang/rust";
+    ".claude/agents/style".source =
+      config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/style";
     ".claude/agents/custom".source =
       config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/custom";
     ".codex/agents".source =
@@ -90,7 +93,6 @@ in
       '';
     };
   };
-
   # --------------------------------------------------
   # compile codex TOML agents on every switch, so the
   # gitignored .generated/ dir stays fresh. $DRY_RUN_CMD is
@@ -174,6 +176,7 @@ in
     "$HOME/.lmstudio/bin"
     "$HOME/.local/bin"
     "$HOME/.opencode/bin"
+    "$HOME/.kimi-code/bin"
   ];
 
   # --------------------------------------------------

@@ -1,2 +1,6 @@
-.archive/
+**/.archive/
 flake.lock
+**/__pycache__/
+**/*.pyc
+result
+resume/private/
