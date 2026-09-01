@@ -2,15 +2,9 @@
 
 Nix home-manager flake managing my dev environment. Declarative, reproducible setup for shell tools, editor configs, and dev toolchains.
 
-## Remember!
-
-```bash
-ln -s ~/<repo-path> ~/.config/home-manager
-```
-
 ## Quick Start
 
-One-liner to install the full environment on any Linux machine:
+One-liner to install the full environment on Linux, WSL, or macOS:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/arpadav/home/main/install.sh | sh
@@ -18,25 +12,19 @@ curl -fsSL https://raw.githubusercontent.com/arpadav/home/main/install.sh | sh
 
 This installs Nix (if missing), pulls the flake, and runs `home-manager switch`.
 
-## Structure
+## For a machine you edit configs on
 
-```
-home.nix          # main home-manager module (packages, aliases, configs)
-flake.nix         # root flake (uses $USER/$HOME from env)
-aedit/            # standalone aedit editor config (can be installed independently)
-debug/            # Docker environment for testing changes
-install.sh        # full environment installer
+Everything out-of-store resolves through `~/.config/home-manager`. Clone there
+and the same configs become live — edits apply without a rebuild, and the brain
+skills, agents, and logs link up:
+
+```sh
+git clone --recurse-submodules https://github.com/arpadav/home.git ~/.config/home-manager
+cd ~/.config/home-manager
+nix run home-manager -- switch -b backup --flake .#headless --impure
 ```
 
 ## Local Development
-
-Clone and switch locally:
-
-```sh
-git clone https://github.com/arpadav/home.git
-cd home
-nix run home-manager -- switch --flake .#$USER --impure
-```
 
 Test changes in Docker before applying — see [debug/README.md](debug/README.md).
 

@@ -42,6 +42,19 @@ language-servers = [
   "rust-analyzer",
 ]
 
+# helix already routes cu/cuh into the cpp language, so clangd and clang-format
+# cover CUDA without a separate entry. the cuda-specific compile flags live in
+# ~/.config/clangd/config.yaml, gated on the file extension
+[[language]]
+name = "cpp"
+formatter = { command = "clang-format", args = ["--style", "{BasedOnStyle: LLVM, IndentWidth: 4, ColumnLimit: 100}"] }
+language-servers = ["clangd"]
+
+[[language]]
+name = "c"
+formatter = { command = "clang-format", args = ["--style", "{BasedOnStyle: LLVM, IndentWidth: 4, ColumnLimit: 100}"] }
+language-servers = ["clangd"]
+
 [[language]]
 name = "svelte"
 scope = "source.svelte"
@@ -59,6 +72,15 @@ language-servers = ["ruff", "pylsp"]
 # [language-server.superhtml]
 # command = "superhtml"
 # args = ["lsp"]
+
+[language-server.clangd]
+command = "clangd"
+args = [
+  "--background-index",
+  "--clang-tidy",
+  "--completion-style=detailed",
+  "--header-insertion=never",
+]
 
 [language-server.rust-analyzer]
 config = { checkOnSave = true, cargo = { allFeatures = true } }
