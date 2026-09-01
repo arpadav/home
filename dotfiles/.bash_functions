@@ -20,7 +20,18 @@ fenv() {
     fi
     git -C "$ARPAD_HOME_CFG" checkout main || return 1
     git -C "$ARPAD_HOME_CFG" pull || return 1
-    re || return 1
+    # --------------------------------------------------
+    # `pull --recurse-submodules` advances a submodule that
+    # is already populated; it does NOT populate one that a
+    # plain clone left empty, which is the case that leaves
+    # the brain missing
+    # --------------------------------------------------
+    git -C "$ARPAD_HOME_CFG" submodule update --init --recursive || return 1
+    home-manager switch --flake "$ARPAD_HOME_CFG#headless" --impure || return 1
+    unset __HM_SESS_VARS_SOURCED
+    # shellcheck disable=SC1091  # generated at switch time, not present to lint
+    . "$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh"
+    hash -r
 }
 
 # --------------------------------------------------
