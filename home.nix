@@ -157,6 +157,13 @@ in
       pe = "penv $@";
       hm = "ae $ARPAD_HOME_CFG/home.nix";
       hl = "rg --passthru";
+      # --------------------------------------------------
+      # tailscale ssh claims :22 on the tailnet address, so
+      # mosh's bootstrap never reaches the real sshd. point
+      # it at the second sshd port instead
+      #   mts arpad@100.111.196.8
+      # --------------------------------------------------
+      mts = "mosh --ssh=\"ssh -p 2222\"";
     };
 
     # --------------------------------------------------
@@ -176,7 +183,20 @@ in
     # --------------------------------------------------
     # ~/.bashrc
     # --------------------------------------------------
-    bashrcExtra = ''
+    bashrcExtra = lib.mkMerge [
+      # --------------------------------------------------
+      # per-machine escape hatch: unmanaged, never in this
+      # repo, sourced before anything nix defines. mkBefore
+      # rather than a leading line - other modules feed this
+      # option too and would otherwise land above it.
+      # it runs BEFORE bash's `[[ $- == *i* ]] || return`,
+      # so the file must stay SILENT: anything printed here
+      # reaches non-interactive shells and breaks scp/rsync
+      # --------------------------------------------------
+      (lib.mkBefore ''
+        [ -r "$HOME/.bashrc.local" ] && . "$HOME/.bashrc.local"
+      '')
+      ''
       [ -f $HOME/.profile ] && . $HOME/.profile
       [ -f $HOME/.cargo/env ] && . $HOME/.cargo/env
       [ -f $HOME/.bash_secrets ] && . $HOME/.bash_secrets
@@ -198,7 +218,8 @@ in
           printf '%s' "github:arpadav/home"
         fi
       }
-    '';
+      ''
+    ];
   };
 
   home.sessionPath = [
@@ -221,5 +242,14 @@ in
     LD_LIBRARY_PATH = "/usr/local/cuda/lib64\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}";
     C_INCLUDE_PATH = "/usr/include/x86_64-linux-gnu\${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}";
     PKG_CONFIG_PATH = "/usr/lib/x86_64-linux-gnu/pkgconfig\${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}";
+    # --------------------------------------------------
+    # claude code's TUI keeps its own scroll viewport and
+    # turns on mouse reporting, so its output never lands in
+    # tmux's scrollback and a drag reaches the app instead
+    # of copy-mode. with both off tmux owns scrolling and
+    # highlighting again
+    # --------------------------------------------------
+    CLAUDE_CODE_DISABLE_VIRTUAL_SCROLL = "1";
+    CLAUDE_CODE_DISABLE_MOUSE = "1";
   };
 }
