@@ -136,7 +136,7 @@ in
   # --------------------------------------------------
   home.activation.brainCompile = lib.mkIf hasBrain (
     config.lib.dag.entryAfter [ "writeBoundary" ] ''
-      $DRY_RUN_CMD ${pkgs.python3}/bin/python3 "${aavBrain}/bin/compile.py" \
+      $DRY_RUN_CMD ${pkgs.python3}/bin/python3 "${aavBrain}/bin/store/compile.py" \
         || echo "warn: codex agent compile failed; .generated/ may be stale" >&2
     ''
   );
