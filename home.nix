@@ -140,12 +140,36 @@ in
         || echo "warn: codex agent compile failed; .generated/ may be stale" >&2
     ''
   );
+  # --------------------------------------------------
+  # a switch from `github:arpadav/home` leaves no checkout
+  # behind, so `re` would keep pulling from github. clone
+  # one into place so the next `re` builds from it. never
+  # touches an existing path (a dir or a symlink to your
+  # own clone). brain is a private ssh submodule, so a
+  # missing key only warns
+  # --------------------------------------------------
+  home.activation.homeCfgClone = config.lib.dag.entryAfter [ "writeBoundary" ] ''
+    if [ ! -e "${homeCfg}" ] && [ ! -L "${homeCfg}" ]; then
+      $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/arpadav/home.git "${homeCfg}" \
+        && $DRY_RUN_CMD ${pkgs.git}/bin/git -C "${homeCfg}" remote set-url --push origin git@github.com:arpadav/home \
+        && { $DRY_RUN_CMD ${pkgs.git}/bin/git -C "${homeCfg}" submodule update --init --recursive \
+          || echo "warn: brain submodule clone failed; run \`git -C ${homeCfg} submodule update --init\`" >&2; } \
+        || echo "warn: could not clone home flake into ${homeCfg}" >&2
+    fi
+  '';
 
   # --------------------------------------------------
   # bash config
   # --------------------------------------------------
   programs.bash = {
     enable = true;
+    # --------------------------------------------------
+    # space-prefixed commands skip history. termius shell
+    # integration types its setup snippet into the login
+    # shell with a leading space and counts on this to
+    # keep it out of ~/.bash_history
+    # --------------------------------------------------
+    historyControl = [ "ignorespace" ];
     # --------------------------------------------------
     # aliases
     # --------------------------------------------------
@@ -243,13 +267,14 @@ in
     C_INCLUDE_PATH = "/usr/include/x86_64-linux-gnu\${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}";
     PKG_CONFIG_PATH = "/usr/lib/x86_64-linux-gnu/pkgconfig\${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}";
     # --------------------------------------------------
-    # claude code's TUI keeps its own scroll viewport and
-    # turns on mouse reporting, so its output never lands in
-    # tmux's scrollback and a drag reaches the app instead
-    # of copy-mode. with both off tmux owns scrolling and
-    # highlighting again
+    # claude code defaults to its fullscreen renderer, which
+    # draws on the alternate screen like vim, so its output
+    # never lands in tmux's scrollback and the wheel either
+    # reaches the app or (with mouse capture off) nothing.
+    # forcing the classic renderer keeps the conversation in
+    # native scrollback, so tmux owns scrolling and
+    # highlighting again. overrides the saved `tui` setting
     # --------------------------------------------------
-    CLAUDE_CODE_DISABLE_VIRTUAL_SCROLL = "1";
-    CLAUDE_CODE_DISABLE_MOUSE = "1";
+    CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN = "1";
   };
 }
