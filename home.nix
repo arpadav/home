@@ -152,7 +152,7 @@ in
     if [ ! -e "${homeCfg}" ] && [ ! -L "${homeCfg}" ]; then
       $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/arpadav/home.git "${homeCfg}" \
         && $DRY_RUN_CMD ${pkgs.git}/bin/git -C "${homeCfg}" remote set-url --push origin git@github.com:arpadav/home \
-        && { $DRY_RUN_CMD ${pkgs.git}/bin/git -C "${homeCfg}" submodule update --init --recursive \
+        && { $DRY_RUN_CMD env PATH="${pkgs.openssh}/bin:$PATH" ${pkgs.git}/bin/git -C "${homeCfg}" submodule update --init --recursive \
           || echo "warn: brain submodule clone failed; run \`git -C ${homeCfg} submodule update --init\`" >&2; } \
         || echo "warn: could not clone home flake into ${homeCfg}" >&2
     fi
