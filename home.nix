@@ -14,6 +14,19 @@ let
     else throw "home.nix probes the filesystem to locate your checkout - re-run with --impure";
   homeCfg = "${config.home.homeDirectory}/.config/home-manager";
   # --------------------------------------------------
+  # personal github alias: a `Host aav-github` block in
+  # ~/.ssh/config (HostName github.com + the personal
+  # IdentityFile). the key choice stays in ssh config;
+  # this only checks whether the alias is there
+  # --------------------------------------------------
+  personalSshHost = "aav-github";
+  sshConfig = "${config.home.homeDirectory}/.ssh/config";
+  hasPersonalSshHost =
+    onDisk sshConfig
+    && lib.any
+      (line: builtins.match "[[:space:]]*[Hh]ost[[:space:]]+(.*[[:space:]])?${personalSshHost}([[:space:]].*)?" line != null)
+      (lib.splitString "\n" (builtins.readFile sshConfig));
+  # --------------------------------------------------
   # brain: arpad's one transferable second-brain - cards +
   # scripts + agentic files
   # --------------------------------------------------
@@ -48,7 +61,12 @@ let
   # --------------------------------------------------
   cudaShimRel = ".local/share/clangd-cuda-shim";
   cudaShim = "${config.home.homeDirectory}/${cudaShimRel}";
-  brainLinks =
+  # --------------------------------------------------
+  # forced: these paths belong to the brain, and older
+  # hand-made symlinks into a working checkout sit where
+  # they go. without force every switch stops on them
+  # --------------------------------------------------
+  brainLinks = lib.mapAttrs (_: file: file // { force = true; }) (
     (mkLinks ".claude/skills" skillsRoot brainSkills)
     // (mkLinks ".agents/skills" skillsRoot brainSkills)
     // (mkLinks ".codex/skills" skillsRoot brainSkills)
@@ -74,7 +92,8 @@ let
           exec ${pkgs.python3}/bin/python3 "${aavBrain}/bin/brain-find.py" "$@"
         '';
       };
-    };
+    }
+  );
 in
 {
   # --------------------------------------------------
@@ -92,7 +111,6 @@ in
     deno
     eza
     fd
-    git
     go
     mosh
     nil
@@ -135,40 +153,53 @@ in
   # compile codex TOML agents on every switch
   # --------------------------------------------------
   home.activation.brainCompile = lib.mkIf hasBrain (
-    config.lib.dag.entryAfter [ "writeBoundary" ] ''
-      $DRY_RUN_CMD ${pkgs.python3}/bin/python3 "${aavBrain}/bin/store/compile.py" \
-        || echo "warn: codex agent compile failed; .generated/ may be stale" >&2
+    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      run ${pkgs.python3}/bin/python3 "${aavBrain}/bin/store/compile.py" \
+        || warnEcho "codex agent compile failed; .generated/ may be stale"
     ''
   );
+  # --------------------------------------------------
+  # git. the checkout in ~/.config/home-manager (and its
+  # submodules, whose gitdirs live under its .git) is
+  # personal: commit as arpadav, and route arpadav/ ssh
+  # urls through the personal alias when it exists
+  # --------------------------------------------------
+  programs.git = {
+    enable = true;
+    includes = [
+      {
+        condition = "gitdir:${homeCfg}/";
+        contents = {
+          user = {
+            name = "arpadav";
+            email = "arpadav@gmail.com";
+          };
+        } // lib.optionalAttrs hasPersonalSshHost {
+          url."git@${personalSshHost}:arpadav/".insteadOf = "git@github.com:arpadav/";
+        };
+      }
+    ];
+  };
   # --------------------------------------------------
   # a switch from `github:arpadav/home` leaves no checkout
   # behind, so `re` would keep pulling from github. clone
   # one into place so the next `re` builds from it. never
-  # touches an existing path (a dir or a symlink to your
-  # own clone). brain is a private ssh submodule, so a
-  # missing key only warns. if ~/.ssh/config defines a
-  # `Host aav-github` alias (HostName github.com plus the
-  # personal IdentityFile), arpadav/ urls are rewritten
-  # through it, persisted on every repo so later pulls and
-  # pushes pick the same key; otherwise plain github.com
-  # with ssh's default key selection
+  # touches an existing path. runs after linkGeneration so
+  # the submodule fetch already sees the git include above.
+  # brain is a private ssh submodule, so a missing key only
+  # warns
   # --------------------------------------------------
-  home.activation.homeCfgClone = config.lib.dag.entryAfter [ "writeBoundary" ] ''
-    if [ ! -e "${homeCfg}" ] && [ ! -L "${homeCfg}" ]; then
-      ssh=${pkgs.openssh}/bin/ssh
-      git=${pkgs.git}/bin/git
-      aavCfg=()
-      if [ "$($ssh -G aav-github 2>/dev/null | ${pkgs.gawk}/bin/awk '$1 == "hostname" { print $2 }')" = github.com ]; then
-        aavCfg=(-c url.git@aav-github:arpadav/.insteadOf=git@github.com:arpadav/)
+  home.activation.homeCfgClone = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    if [ ! -e "${homeCfg}" ] && [ ! -L "${homeCfg}" ]; then (
+      export PATH="${lib.makeBinPath [ config.programs.git.package pkgs.openssh ]}:$PATH"
+      if run git clone https://github.com/arpadav/home.git "${homeCfg}"; then
+        run git -C "${homeCfg}" remote set-url --push origin git@github.com:arpadav/home
+        run git -C "${homeCfg}" submodule update --init --recursive \
+          || warnEcho "brain submodule clone failed; run \`git -C ${homeCfg} submodule update --init --recursive\`"
+      else
+        warnEcho "could not clone home flake into ${homeCfg}"
       fi
-      $DRY_RUN_CMD $git clone https://github.com/arpadav/home.git "${homeCfg}" \
-        && $DRY_RUN_CMD $git -C "${homeCfg}" remote set-url --push origin git@github.com:arpadav/home \
-        && { $DRY_RUN_CMD env PATH="${pkgs.openssh}/bin:${pkgs.git}/bin:$PATH" git "''${aavCfg[@]}" -C "${homeCfg}" submodule update --init --recursive \
-          && { [ ''${#aavCfg[@]} -eq 0 ] || { $DRY_RUN_CMD $git -C "${homeCfg}" config url.git@aav-github:arpadav/.insteadOf git@github.com:arpadav/ \
-            && $DRY_RUN_CMD env PATH="${pkgs.git}/bin:$PATH" git -C "${homeCfg}" submodule foreach --quiet --recursive "git config url.git@aav-github:arpadav/.insteadOf git@github.com:arpadav/"; }; } \
-          || echo "warn: brain submodule clone failed; run \`git -C ${homeCfg} submodule update --init\`" >&2; } \
-        || echo "warn: could not clone home flake into ${homeCfg}" >&2
-    fi
+    ) fi
   '';
 
   # --------------------------------------------------
