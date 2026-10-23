@@ -146,13 +146,26 @@ in
   # one into place so the next `re` builds from it. never
   # touches an existing path (a dir or a symlink to your
   # own clone). brain is a private ssh submodule, so a
-  # missing key only warns
+  # missing key only warns. if ~/.ssh/config defines a
+  # `Host aav-github` alias (HostName github.com plus the
+  # personal IdentityFile), arpadav/ urls are rewritten
+  # through it, persisted on every repo so later pulls and
+  # pushes pick the same key; otherwise plain github.com
+  # with ssh's default key selection
   # --------------------------------------------------
   home.activation.homeCfgClone = config.lib.dag.entryAfter [ "writeBoundary" ] ''
     if [ ! -e "${homeCfg}" ] && [ ! -L "${homeCfg}" ]; then
-      $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/arpadav/home.git "${homeCfg}" \
-        && $DRY_RUN_CMD ${pkgs.git}/bin/git -C "${homeCfg}" remote set-url --push origin git@github.com:arpadav/home \
-        && { $DRY_RUN_CMD env PATH="${pkgs.openssh}/bin:$PATH" ${pkgs.git}/bin/git -C "${homeCfg}" submodule update --init --recursive \
+      ssh=${pkgs.openssh}/bin/ssh
+      git=${pkgs.git}/bin/git
+      aavCfg=()
+      if [ "$($ssh -G aav-github 2>/dev/null | ${pkgs.gawk}/bin/awk '$1 == "hostname" { print $2 }')" = github.com ]; then
+        aavCfg=(-c url.git@aav-github:arpadav/.insteadOf=git@github.com:arpadav/)
+      fi
+      $DRY_RUN_CMD $git clone https://github.com/arpadav/home.git "${homeCfg}" \
+        && $DRY_RUN_CMD $git -C "${homeCfg}" remote set-url --push origin git@github.com:arpadav/home \
+        && { $DRY_RUN_CMD env PATH="${pkgs.openssh}/bin:${pkgs.git}/bin:$PATH" git "''${aavCfg[@]}" -C "${homeCfg}" submodule update --init --recursive \
+          && { [ ''${#aavCfg[@]} -eq 0 ] || { $DRY_RUN_CMD $git -C "${homeCfg}" config url.git@aav-github:arpadav/.insteadOf git@github.com:arpadav/ \
+            && $DRY_RUN_CMD env PATH="${pkgs.git}/bin:$PATH" git -C "${homeCfg}" submodule foreach --quiet --recursive "git config url.git@aav-github:arpadav/.insteadOf git@github.com:arpadav/"; }; } \
           || echo "warn: brain submodule clone failed; run \`git -C ${homeCfg} submodule update --init\`" >&2; } \
         || echo "warn: could not clone home flake into ${homeCfg}" >&2
     fi
