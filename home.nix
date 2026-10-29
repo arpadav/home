@@ -130,6 +130,7 @@ in
     ".config/nix/nix.conf".text = builtins.readFile ./nix.conf;
     ".config/helix/runtime".source = "${pkgs.helix.runtime}";
     ".tmux.conf".source = dotfile "tmux.conf";
+    ".local/share/no-agent-summary.js".source = dotfile "no-agent-summary.js";
     ".config/clangd/config.yaml".text = ''
       If:
         PathMatch: [.*\.cu, .*\.cuh]
@@ -320,5 +321,16 @@ in
     # highlighting again. overrides the saved `tui` setting
     # --------------------------------------------------
     CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN = "1";
+    # --------------------------------------------------
+    # bun preload that never arms claude code's ~30s
+    # agent_summary timer, which resends each background
+    # agent's whole transcript to fill its panel status.
+    # source: gist flamerix-ai/c3905705cc4205e5de3011fa2e74efce.
+    # `=` form, since BUN_OPTIONS reaches every bun and the
+    # space form breaks bun subcommands. a daemon started
+    # without it keeps spawning unhooked sessions:
+    # `claude daemon stop --any`
+    # --------------------------------------------------
+    BUN_OPTIONS = "\${BUN_OPTIONS:+$BUN_OPTIONS }--preload=$HOME/.local/share/no-agent-summary.js";
   };
 }
