@@ -322,14 +322,8 @@ in
     # --------------------------------------------------
     CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN = "1";
     # --------------------------------------------------
-    # bun preload that never arms claude code's ~30s
-    # agent_summary timer, which resends each background
-    # agent's whole transcript to fill its panel status.
-    # source: gist flamerix-ai/c3905705cc4205e5de3011fa2e74efce.
-    # `=` form, since BUN_OPTIONS reaches every bun and the
-    # space form breaks bun subcommands. a daemon started
-    # without it keeps spawning unhooked sessions:
-    # `claude daemon stop --any`
+    # kill claude code's agent_summary side-query
+    # gist flamerix-ai/c3905705cc4205e5de3011fa2e74efce
     # --------------------------------------------------
     BUN_OPTIONS = "\${BUN_OPTIONS:+$BUN_OPTIONS }--preload=$HOME/.local/share/no-agent-summary.js";
   };
