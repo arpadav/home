@@ -130,6 +130,7 @@ in
     ".config/nix/nix.conf".text = builtins.readFile ./nix.conf;
     ".config/helix/runtime".source = "${pkgs.helix.runtime}";
     ".tmux.conf".source = dotfile "tmux.conf";
+    ".local/share/no-agent-summary.js".source = dotfile "no-agent-summary.js";
     ".config/clangd/config.yaml".text = ''
       If:
         PathMatch: [.*\.cu, .*\.cuh]
@@ -320,5 +321,10 @@ in
     # highlighting again. overrides the saved `tui` setting
     # --------------------------------------------------
     CLAUDE_CODE_DISABLE_ALTERNATE_SCREEN = "1";
+    # --------------------------------------------------
+    # kill claude code's agent_summary side-query
+    # gist flamerix-ai/c3905705cc4205e5de3011fa2e74efce
+    # --------------------------------------------------
+    BUN_OPTIONS = "\${BUN_OPTIONS:+$BUN_OPTIONS }--preload=$HOME/.local/share/no-agent-summary.js";
   };
 }
