@@ -24,6 +24,19 @@ cd ~/.config/home-manager
 nix run home-manager -- switch -b backup --flake .#headless --impure
 ```
 
+## Repo roots
+
+Repo-backed links (the `ask-arpad` and `nas` skills) resolve through the
+directories in `~/.config/aav/repos.toml`, searched in order. Without the file
+the only root is `~/repos/personal`:
+
+```toml
+roots = ["~/repos/active", "~/repos/inactive"]
+```
+
+If the home checkout lives under a root instead of `~/.config/home-manager`,
+link it: `ln -sfn ~/repos/active/home ~/.config/home-manager`.
+
 ## Local Development
 
 Test changes in Docker before applying — see [debug/README.md](debug/README.md).

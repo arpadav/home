@@ -1,0 +1,6 @@
+# checks a change to this repo must pass before it counts as verified, keyed
+# by the paths they cover. brain-verify.py reads it; `*` crosses directories
+[[check]]
+name = "install matrix"
+when = ["*.nix", "flake.lock", "nix.conf", "install.sh", "hi.sh", "aedit/*", "dotfiles/*", "debug/*", "brain/flake.lock"]
+run = "debug/matrix.sh"
