@@ -27,29 +27,6 @@ let
       (line: builtins.match "[[:space:]]*[Hh]ost[[:space:]]+(.*[[:space:]])?${personalSshHost}([[:space:]].*)?" line != null)
       (lib.splitString "\n" (builtins.readFile sshConfig));
   # --------------------------------------------------
-  # brain: arpad's one transferable second-brain - cards +
-  # scripts + agentic files
-  # --------------------------------------------------
-  aavBrain = "${homeCfg}/brain";
-  agentsRoot = "${aavBrain}/agentic-files/agents";
-  skillsRoot = "${aavBrain}/agentic-files/skills";
-  codexAgents = "${aavBrain}/.generated/codex/agents";
-  # --------------------------------------------------
-  # list every submodule, fixes old recurse bug
-  # --------------------------------------------------
-  brainSkills =
-    if hasBrain && onDisk skillsRoot
-    then builtins.attrNames (lib.filterAttrs (_: t: t == "directory") (builtins.readDir skillsRoot))
-    else [ ];
-  mkLinks = prefix: src: names: builtins.listToAttrs (map (name: {
-    name = "${prefix}/${name}";
-    value.source = config.lib.file.mkOutOfStoreSymlink "${src}/${name}";
-  }) names);
-  # --------------------------------------------------
-  # check if has brain on disk
-  # --------------------------------------------------
-  hasBrain = onDisk agentsRoot;
-  # --------------------------------------------------
   # dot files
   # --------------------------------------------------
   dotfile = rel:
@@ -62,46 +39,24 @@ let
   cudaShimRel = ".local/share/clangd-cuda-shim";
   cudaShim = "${config.home.homeDirectory}/${cudaShimRel}";
   # --------------------------------------------------
-  # forced: these paths belong to the brain, and older
-  # hand-made symlinks into a working checkout sit where
-  # they go. without force every switch stops on them
+  # brain: a private submodule, so a checkout may not have
+  # it. its module is read off disk, never from the flake
+  # copy, which leaves submodules out. imports cannot see
+  # `config`, so the path is built from the login's HOME
   # --------------------------------------------------
-  brainLinks = lib.mapAttrs (_: file: file // { force = true; }) (
-    (mkLinks ".claude/skills" skillsRoot brainSkills)
-    // (mkLinks ".agents/skills" skillsRoot brainSkills)
-    // (mkLinks ".codex/skills" skillsRoot brainSkills)
-    // lib.optionalAttrs hasBrain {
-      ".claude/agents/brain".source =
-        config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/brain";
-      ".claude/agents/general".source =
-        config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/general";
-      ".claude/agents/rust".source =
-        config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/lang/rust";
-      ".claude/agents/style".source =
-        config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/style";
-      ".claude/agents/custom".source =
-        config.lib.file.mkOutOfStoreSymlink "${agentsRoot}/custom";
-      ".codex/agents".source =
-        config.lib.file.mkOutOfStoreSymlink codexAgents;
-      ".local/share/aav-brain".source =
-        config.lib.file.mkOutOfStoreSymlink "${aavBrain}/logs";
-      ".local/bin/brain-find" = {
-        executable = true;
-        text = ''
-          #!/usr/bin/env bash
-          exec ${pkgs.python3}/bin/python3 "${aavBrain}/bin/brain-find.py" "$@"
-        '';
-      };
-    }
-  );
+  brainModule = "${builtins.getEnv "HOME"}/.config/home-manager/brain/module.nix";
 in
 {
   # --------------------------------------------------
-  # aedit
+  # aedit, repo-backed links, and the brain when it is
+  # checked out
   # --------------------------------------------------
   imports = [
     ./aedit/module.nix
-  ];
+    ./repos.nix
+  ] ++ (if builtins.pathExists brainModule then [ brainModule ] else [ ]);
+  warnings = lib.optional (!builtins.pathExists brainModule)
+    "brain module not found at ${brainModule} - brain skills and agents are not linked";
 
   # --------------------------------------------------
   # my home packages
@@ -126,7 +81,7 @@ in
   # --------------------------------------------------
   # configs
   # --------------------------------------------------
-  home.file = brainLinks // {
+  home.file = {
     ".config/nix/nix.conf".text = builtins.readFile ./nix.conf;
     ".config/helix/runtime".source = "${pkgs.helix.runtime}";
     ".tmux.conf".source = dotfile "tmux.conf";
@@ -150,15 +105,6 @@ in
     "${cudaShimRel}/texture_fetch_functions.h".text = "";
     "${cudaShimRel}/surface_functions.h".text = "";
   };
-  # --------------------------------------------------
-  # compile codex TOML agents on every switch
-  # --------------------------------------------------
-  home.activation.brainCompile = lib.mkIf hasBrain (
-    lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      run ${pkgs.python3}/bin/python3 "${aavBrain}/bin/store/compile.py" \
-        || warnEcho "codex agent compile failed; .generated/ may be stale"
-    ''
-  );
   # --------------------------------------------------
   # git. the checkout in ~/.config/home-manager (and its
   # submodules, whose gitdirs live under its .git) is
@@ -307,7 +253,6 @@ in
   # --------------------------------------------------
   home.sessionVariables = {
     ARPAD_HOME_CFG = "$HOME/.config/home-manager";
-    AAV_BRAIN = "$HOME/.config/home-manager/brain";
     LD_LIBRARY_PATH = "/usr/local/cuda/lib64\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}";
     C_INCLUDE_PATH = "/usr/include/x86_64-linux-gnu\${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}";
     PKG_CONFIG_PATH = "/usr/lib/x86_64-linux-gnu/pkgconfig\${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}";

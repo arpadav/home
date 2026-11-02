@@ -1,28 +1,24 @@
 # debug
 
-Docker environment for testing home-manager config changes without affecting your real system.
+Docker machines for testing installs without touching your real system.
 
-## Usage
+## Install matrix
 
-From anywhere:
+```sh
+./debug/matrix.sh          # the working tree, every install combination
+./debug/matrix.sh remote   # the curl | sh installers, against github main
+```
+
+Each scenario runs in a fresh container and `check.sh` asserts what the switch left behind. Logs land in `~/.cache/ahome-matrix/`. The brain runs it on its own when a change touches a path in `../verify.toml`.
+
+## Interactive
 
 ```sh
 ./debug/enter.sh
 ```
 
-This builds a Docker image with Nix pre-installed and drops you into a container with the repo mounted at `~/ahome`.
-
-Inside the container, apply the config:
+Builds an Ubuntu 24.04 image with single-user Nix, matching your username and UID, and drops you into it with the repo mounted at `~/ahome`. From there:
 
 ```sh
-cd ~/ahome
-./debug/load.sh
+nix run home-manager/master -- switch -b backup --impure --flake .#headless
 ```
-
-This runs `home-manager switch` against the local flake, so you can verify your changes work before committing.
-
-## How It Works
-
-- `enter.sh` — builds the Docker image (parameterized with your `$USER`) and starts an interactive container with the repo bind-mounted
-- `load.sh` — runs `home-manager switch` against the local flake inside the container
-- `Dockerfile` — Ubuntu 24.04 base with Nix single-user install, matching your username/UID
