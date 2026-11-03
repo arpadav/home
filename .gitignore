@@ -3,3 +3,6 @@
 **/*.pyc
 result
 resume/private/
+
+# scratch and open items, per machine, never committed
+/plans/
