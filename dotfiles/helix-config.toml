@@ -44,6 +44,11 @@ right = [
 # --------------------------------------------------
 "A-q" = ":bc"
 # --------------------------------------------------
+# Alt + g - git diff of this file through delta, in a
+# zellij floating pane that closes with the pager
+# --------------------------------------------------
+"A-g" = ":sh zellij run --floating --close-on-exit --cwd \"$PWD\" -- bash -c 'git diff -- \"$1\" | delta --paging=always' _ %{buffer_name}"
+# --------------------------------------------------
 # Alt + / - toggle comments
 # tried with Ctrl + / but issue with terminal sending keys
 # --------------------------------------------------
