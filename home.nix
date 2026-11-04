@@ -134,13 +134,15 @@ in
   # touches an existing path. runs after linkGeneration so
   # the submodule fetch already sees the git include above.
   # brain is a private ssh submodule, so a missing key only
-  # warns
+  # warns. cloned over https so it needs no key, then
+  # origin moves to ssh for both fetch and push: b-sync
+  # refuses an origin that fetches and pushes apart
   # --------------------------------------------------
   home.activation.homeCfgClone = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
     if [ ! -e "${homeCfg}" ] && [ ! -L "${homeCfg}" ]; then (
       export PATH="${lib.makeBinPath [ config.programs.git.package pkgs.openssh ]}:$PATH"
       if run git clone https://github.com/arpadav/home.git "${homeCfg}"; then
-        run git -C "${homeCfg}" remote set-url --push origin git@github.com:arpadav/home
+        run git -C "${homeCfg}" remote set-url origin git@github.com:arpadav/home
         run git -C "${homeCfg}" submodule update --init --recursive \
           || warnEcho "brain submodule clone failed; run \`git -C ${homeCfg} submodule update --init --recursive\`"
       else

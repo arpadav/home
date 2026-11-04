@@ -33,11 +33,17 @@ export PATH="$HOME/.nix-profile/bin:$HOME/.local/bin:$PATH"
 
 # --------------------------------------------------
 # every link home-manager made resolves. checkouts and
-# nix's own bookkeeping are not its links
+# nix's own bookkeeping are not its links, and neither
+# is a link pointing anywhere but the store or the
+# checkout: apps leave dangling ones on purpose (snap
+# themes, browser and mail lock files)
 # --------------------------------------------------
 d=$(find -L "$HOME" -maxdepth 4 \( -path "$cfg" -o -path "$HOME/src" -o -path "$HOME/aav-brain" \
     -o -path "$HOME/.nix-defexpr" -o -path "$HOME/.cache" -o -path "$HOME/.local/state" \) -prune \
-    -o -type l -print 2>/dev/null)
+    -o -type l -print 2>/dev/null |
+    while read -r l; do
+        case $(readlink "$l") in /nix/store/* | "$cfg"/*) echo "$l" ;; esac
+    done)
 [ -z "$d" ] && ok "no dangling links" || bad "dangling links: $(echo "$d" | tr '\n' ' ')"
 
 # --------------------------------------------------
