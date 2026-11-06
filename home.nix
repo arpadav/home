@@ -219,6 +219,20 @@ in
       [ -f $HOME/.bash_secrets ] && . $HOME/.bash_secrets
       [ -f $HOME/.bash_functions ] && . $HOME/.bash_functions
 
+      # --------------------------------------------------
+      # a tmux server first started from an ssh login hands
+      # every pane an empty DISPLAY, so GUI apps find no
+      # screen; attach to this user's running X session
+      # --------------------------------------------------
+      if [ -z "$DISPLAY" ]; then
+        for sock in /tmp/.X11-unix/X*; do
+          [ -O "$sock" ] || continue
+          export DISPLAY=":''${sock##*/X}"
+          [ -r "/run/user/$UID/gdm/Xauthority" ] && export XAUTHORITY="/run/user/$UID/gdm/Xauthority"
+          break
+        done
+      fi
+
       # nvm
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
