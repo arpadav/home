@@ -58,6 +58,15 @@ in
   };
 
   # --------------------------------------------------
+  # delta: git's pager, and what helix's Alt + g diff
+  # pane renders through
+  # --------------------------------------------------
+  programs.delta = {
+    enable = true;
+    enableGitIntegration = true;
+  };
+
+  # --------------------------------------------------
   # settings
   # --------------------------------------------------
   home.shell.enableBashIntegration = true;
