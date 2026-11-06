@@ -10,10 +10,14 @@
 #
 # local scenarios copy the working tree as it stands, uncommitted edits
 # included, so a change is tested before it is committed:
-#   full       checkout at ~/.config/home-manager with the brain
+#   full       checkout at the install copy with the brain
 #   no-brain   the same checkout, brain submodule never cloned
 #   aedit      aedit alone, from the checkout
-#   elsewhere  checkout outside ~/.config/home-manager
+#   elsewhere  checkout outside the install copy
+#   edit       full, plus an edit copy under the default root
+#   migrate    an old ~/.config/home-manager clone, moved by sy, then full
+#   held       brain/logs holding a new file, in the install copy and then in
+#              an old clone: sy refuses, nothing deinited or moved
 #   brain      the brain alone, from its own flake
 # remote scenarios run the curl | sh installers on a box with no nix:
 #   remote-full   install.sh, then a second switch from the checkout it cloned
@@ -25,7 +29,7 @@ set -u
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(dirname "$HERE")"
 LOGS="${XDG_CACHE_HOME:-$HOME/.cache}/ahome-matrix"
-LOCAL="full no-brain aedit elsewhere brain"
+LOCAL="full no-brain aedit elsewhere brain edit migrate held"
 REMOTE="remote-full remote-aedit"
 # local scenarios share one nix store, so only the first one downloads
 STORE=ahome-matrix-nix
@@ -37,9 +41,17 @@ STORE=ahome-matrix-nix
 # are committed
 # --------------------------------------------------
 SWITCH='nix run home-manager/master -- switch -b backup --impure'
-COPY='cp -a /src ~/.config/home-manager && git -C ~/.config/home-manager add -A -- . ":!brain"'
-STAGE_BRAIN='git -C ~/.config/home-manager/brain add -A -- . ":!logs"'
-DROP_BRAIN='rm -rf ~/.config/home-manager/brain && mkdir ~/.config/home-manager/brain'
+# the install copy, the clone an old install left, and an edit copy under the
+# default root, all expanded in the container
+# shellcheck disable=SC2016
+CFG='$HOME/.config/aav/home'
+# shellcheck disable=SC2016
+OLD='$HOME/.config/home-manager'
+# shellcheck disable=SC2016
+EDIT='$HOME/repos/personal/home'
+COPY="mkdir -p ${CFG%/*} && cp -a /src $CFG && git -C $CFG add -A -- . ':!brain'"
+STAGE_BRAIN="git -C $CFG/brain add -A -- . ':!logs'"
+DROP_BRAIN="rm -rf $CFG/brain && mkdir $CFG/brain"
 # the brain's gitdir lives under home's .git; moved beside its work tree it
 # drops the worktree pointer back, and so does its own logs submodule
 BRAIN_ALONE='cp -a /src/brain ~/aav-brain && rm ~/aav-brain/.git && cp -a /src/.git/modules/brain ~/aav-brain/.git &&
@@ -50,11 +62,20 @@ BRAIN_ALONE='cp -a /src/brain ~/aav-brain && rm ~/aav-brain/.git && cp -a /src/.
 
 steps() {
     case $1 in
-        full) echo "$COPY && $STAGE_BRAIN && cd ~/.config/home-manager && $SWITCH --flake .#headless &&
-            /check.sh home aedit live brain=\$HOME/.config/home-manager/brain" ;;
-        no-brain) echo "$COPY && $DROP_BRAIN && cd ~/.config/home-manager && $SWITCH --flake .#headless &&
+        full) echo "$COPY && $STAGE_BRAIN && cd $CFG && $SWITCH --flake .#headless &&
+            /check.sh home aedit live brain=$CFG/brain" ;;
+        edit) echo "$COPY && $STAGE_BRAIN && mkdir -p ${EDIT%/*} && cp -a /src $EDIT && cd $CFG &&
+            $SWITCH --flake .#headless && /check.sh home aedit live brain=$CFG/brain edit=$EDIT" ;;
+        migrate) echo "mkdir -p ${OLD%/*} && cp -a /src $OLD && git -C $OLD add -A -- . ':!brain' &&
+            git -C $OLD/brain add -A -- . ':!logs' && bash $OLD/bin/sy --no-pull --no-switch && cd $CFG &&
+            $SWITCH --flake .#headless && /check.sh home aedit live brain=$CFG/brain migrated" ;;
+        held) echo "$COPY && echo held > $CFG/brain/logs/held && ! bash $CFG/bin/sy --no-pull --no-switch &&
+            [ -e $CFG/brain/logs/.git ] && [ -e $CFG/brain/logs/held ] && mv $CFG $OLD &&
+            ! bash $OLD/bin/sy --no-pull --no-switch &&
+            [ -e $OLD/brain/logs/.git ] && [ -e $OLD/brain/logs/held ] && [ ! -e $CFG ]" ;;
+        no-brain) echo "$COPY && $DROP_BRAIN && cd $CFG && $SWITCH --flake .#headless &&
             /check.sh home aedit live nobrain" ;;
-        aedit) echo "$COPY && $DROP_BRAIN && cd ~/.config/home-manager && $SWITCH --flake '.?dir=aedit#headless' &&
+        aedit) echo "$COPY && $DROP_BRAIN && cd $CFG && $SWITCH --flake '.?dir=aedit#headless' &&
             /check.sh aedit live nobrain" ;;
         elsewhere) echo "mkdir -p ~/src && cp -a /src ~/src/home && git -C ~/src/home add -A -- . ':!brain' &&
             cd ~/src/home && $SWITCH --flake .#headless && /check.sh home aedit store nobrain" ;;
@@ -62,7 +83,7 @@ steps() {
             /check.sh brain=\$HOME/aav-brain" ;;
         remote-full) echo "curl -fsSL https://raw.githubusercontent.com/arpadav/home/main/install.sh | sh &&
             /check.sh home aedit store nobrain &&
-            . ~/.nix-profile/etc/profile.d/nix.sh && cd ~/.config/home-manager && $SWITCH --flake .#headless &&
+            . ~/.nix-profile/etc/profile.d/nix.sh && cd $CFG && $SWITCH --flake .#headless &&
             /check.sh home aedit live nobrain" ;;
         remote-aedit) echo "curl -fsSL https://raw.githubusercontent.com/arpadav/home/main/aedit/install.sh | sh &&
             /check.sh aedit store nobrain" ;;

@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+#
+# sync the install copy with github and switch to it
+#
+# Usage:
+#   sy                pull (recursive, logs skipped), then switch
+#   sy --no-pull      switch the install copy as it is (`re`)
+#   sy --no-switch    pull without switching
+#
+# the install copy is $ARPAD_HOME_CFG. a missing one is made first: an old
+# ~/.config/home-manager clone is moved there, else github is cloned
+#
+# Author: aav
+# --------------------------------------------------
+set -euo pipefail
+# must match install-copy.nix
+new=$HOME/.config/aav/home
+old=$HOME/.config/home-manager
+cfg=${ARPAD_HOME_CFG:-$new}
+# a shell from before the move still exports the old path
+[ "$cfg" = "$old" ] && cfg=$new
+pull=1
+switch=1
+for arg in "$@"; do
+    case $arg in
+        --no-pull) pull=0 ;;
+        --no-switch) switch=0 ;;
+        -h | --help)
+            sed -n '3,11s/^# \{0,1\}//p' "$0"
+            exit 0
+            ;;
+        *)
+            echo "sy: unknown argument $arg" >&2
+            exit 2
+            ;;
+    esac
+done
+# --------------------------------------------------
+# every mutating command is shown before it runs
+# --------------------------------------------------
+run() {
+    echo "Running: $*"
+    "$@"
+}
+
+# --------------------------------------------------
+# migration: the clone at the old path moves once,
+# after the checks below pass on it. a symlink there
+# points at some checkout; with no install copy yet,
+# /home-setup sorts out which
+# --------------------------------------------------
+move=0
+if [ -L "$old" ]; then
+    if [ ! -e "$cfg" ]; then
+        echo "sy: $old is a symlink - run /home-setup to replace it with a real clone at $cfg" >&2
+        exit 1
+    fi
+elif [ -e "$old/.git" ]; then
+    if [ -e "$cfg" ] || [ -L "$cfg" ]; then
+        echo "sy: warning: $old is a second clone - run /home-setup" >&2
+    else
+        move=1
+    fi
+fi
+# --------------------------------------------------
+# no install copy and nothing to move: clone over https
+# so it needs no key, then origin moves to ssh for both
+# fetch and push: b-sync refuses an origin that fetches
+# and pushes apart
+# --------------------------------------------------
+fresh=0
+if [ "$move" = 0 ] && [ ! -e "$cfg" ] && [ ! -L "$cfg" ]; then
+    run git clone https://github.com/arpadav/home.git "$cfg"
+    run git -C "$cfg" remote set-url origin git@github.com:arpadav/home
+    fresh=1
+fi
+# --------------------------------------------------
+# what the logs deinit would lose in clone $1: changes,
+# ignored files (logs/local/) and commits on no remote
+# branch. empty when there is nothing
+# --------------------------------------------------
+logs_at_risk() {
+    local logs=$1/brain/logs held
+    [ -e "$logs/.git" ] || return 0
+    held=$(git -C "$logs" status --porcelain --ignored)
+    if [ -z "$held" ] && [ -n "$(git -C "$logs" branch -r --contains HEAD)" ]; then
+        return 0
+    fi
+    printf '%s\n' "$logs is checked out, so it is not deinited: it has changes, ignored files or commits on no remote branch." \
+        "commit and push in it, then pull into the edit copy; move ignored files (logs/local/) across by hand:" \
+        "  git -C \"$logs\" add -A; git -C \"$logs\" commit -m brain-sync || :; git -C \"$logs\" push" \
+        "  git -C \"${AVE:-<edit copy>/brain}/logs\" pull"
+    [ -z "$held" ] || printf '%s\n' "$held"
+}
+# --------------------------------------------------
+# refuse on anything the logs deinit or a pull would
+# lose, every problem at once, before anything moves.
+# checked: the install copy, or the old clone about to
+# become it. brain/logs is reported on its own: it is
+# deinited, never committed here
+# --------------------------------------------------
+here=$cfg
+[ "$move" = 0 ] || here=$old
+if [ "$fresh" = 0 ]; then
+    problems=()
+    if [ -L "$here" ]; then
+        [ "$pull" = 0 ] || problems+=("$here is a symlink - run /home-setup to replace it with a real clone")
+    else
+        if [ "$pull" = 1 ]; then
+            dirty=$(git -C "$here" status --porcelain --ignore-submodules=dirty)
+            [ -z "$dirty" ] || problems+=("$here has changes:"$'\n'"$dirty")
+            if [ -e "$here/brain/.git" ]; then
+                dirty=$(git -C "$here/brain" status --porcelain --ignore-submodules=all)
+                [ -z "$dirty" ] || problems+=("$here/brain has changes:"$'\n'"$dirty")
+            fi
+        fi
+        dirty=$(logs_at_risk "$here")
+        [ -z "$dirty" ] || problems+=("$dirty")
+    fi
+    if [ "${#problems[@]}" -gt 0 ]; then
+        printf 'sy: %s\n' "${problems[@]}" >&2
+        exit 1
+    fi
+fi
+if [ "$move" = 1 ]; then
+    run mkdir -p "${cfg%/*}"
+    run mv "$old" "$cfg"
+fi
+if [ "$pull" = 1 ] && [ "$fresh" = 0 ]; then
+    run git -C "$cfg" checkout main
+    run git -C "$cfg" pull --ff-only
+fi
+# --------------------------------------------------
+# submodules, recursive, logs skipped: brain first so
+# its config holds the skip before the recursive pass.
+# also when the brain was never checked out. a brain
+# that cannot be fetched only warns, and the switch
+# goes on with whatever brain is there
+# --------------------------------------------------
+if [ "$pull" = 1 ] || [ "$fresh" = 1 ] || [ ! -e "$cfg/brain/.git" ]; then
+    had_brain=0
+    [ ! -e "$cfg/brain/.git" ] || had_brain=1
+    if ! run git -C "$cfg" submodule update --init -- brain; then
+        if [ "$had_brain" = 1 ]; then
+            echo "sy: warning: the brain submodule could not be updated - it stays at its checked-out commit; run /home-setup" >&2
+        else
+            echo "sy: warning: the brain submodule could not be fetched - going on without it; run /home-setup" >&2
+        fi
+    else
+        run git -C "$cfg/brain" config submodule.logs.update none
+        run git -C "$cfg" submodule update --init --recursive
+    fi
+fi
+# --------------------------------------------------
+# brain/logs checked out in the install copy, already
+# found safe to drop above. never through a symlink,
+# whose target is some other checkout
+# --------------------------------------------------
+if [ ! -L "$cfg" ] && [ -e "$cfg/brain/logs/.git" ]; then
+    run git -C "$cfg/brain" submodule deinit -f logs
+fi
+# --------------------------------------------------
+# the switch
+# --------------------------------------------------
+if [ "$switch" = 1 ]; then
+    run home-manager switch --flake "$cfg#headless" --impure
+fi

@@ -6,3 +6,9 @@ resume/private/
 
 # scratch and open items, per machine, never committed
 /plans/
+
+# learner worktrees of the edit brain
+/.worktrees/
+
+# claude code's per-machine permissions
+/.claude/settings.local.json

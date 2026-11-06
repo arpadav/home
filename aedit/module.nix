@@ -5,7 +5,7 @@ let
   # live (out-of-store) symlink helper: edits to these
   # dotfiles are picked up without a home-manager rebuild
   # --------------------------------------------------
-  liveDir = "${config.home.homeDirectory}/.config/home-manager/aedit/dotfiles";
+  liveDir = "${config.home.homeDirectory}/${import ../install-copy.nix}/aedit/dotfiles";
   live = rel: config.lib.file.mkOutOfStoreSymlink "${liveDir}/${rel}";
   # --------------------------------------------------
   # the copy carried in the flake source, which exists

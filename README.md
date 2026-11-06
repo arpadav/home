@@ -12,17 +12,24 @@ curl -fsSL https://raw.githubusercontent.com/arpadav/home/main/install.sh | sh
 
 This installs Nix (if missing), pulls the flake, and runs `home-manager switch`.
 
-## For a machine you edit configs on
+## Two clones
 
-Everything out-of-store resolves through `~/.config/home-manager`. Clone there
-and the same configs become live — edits apply without a rebuild, and the brain
-skills, agents, and logs link up:
+| clone | where | job |
+|---|---|---|
+| install copy | `~/.config/aav/home` (`$ARPAD_HOME_CFG`) | every switch builds from it, and the dotfiles and brain link into it (repo-backed skills link into their roots). never edited by hand; its brain never checks out `logs` |
+| edit copy | any path (see below) | where this repo and the brain are edited, logged into, and synced from |
+
+`install.sh` makes the install copy. In Claude Code, `/home-setup` makes the edit
+copy and fixes an install copy that is missing or a symlink.
 
 ```sh
-git clone --recurse-submodules https://github.com/arpadav/home.git ~/.config/home-manager
-cd ~/.config/home-manager
-nix run home-manager -- switch -b backup --flake .#headless --impure
+sy                         # pull the install copy (submodules, logs skipped), then switch
+re                         # switch the install copy as it is
+bash <edit copy>/bin/sy    # existing machine, first time: moves the old clone, switches from the new path
 ```
+
+Not `re` from an old shell that first time: it still builds from the old path,
+and once that clone has moved, from `github:arpadav/home` - without the brain.
 
 ## Repo roots
 
@@ -34,8 +41,10 @@ the only root is `~/repos/personal`:
 roots = ["~/repos/active", "~/repos/inactive"]
 ```
 
-If the home checkout lives under a root instead of `~/.config/home-manager`,
-link it: `ln -sfn ~/repos/active/home ~/.config/home-manager`.
+The edit copy is `edit = "/path/to/home"` from the same file when set, else the
+first `<root>/home`; either way only a clone holding `brain/bin` that is not the
+install copy counts. `roots` keeps its default when the file sets only `edit`.
+The file lives in `$XDG_CONFIG_HOME/aav/` when that is set to an absolute path.
 
 ## Local Development
 

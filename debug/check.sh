@@ -6,10 +6,12 @@
 #   check.sh <expect>...
 #     home       home packages and dotfiles
 #     aedit      helix/broot config, hx and ae on PATH
-#     live       configs link into the checkout at ~/.config/home-manager
+#     live       configs link into the install copy, $ARPAD_HOME_CFG
 #     store      configs are store copies
 #     brain=DIR  brain linked from DIR; b-find, its -e export, AAV_BRAIN and AVB agree
 #     nobrain    nothing of the brain installed
+#     edit=DIR   DIR is the edit copy: AVE names its brain
+#     migrated   the ~/.config/home-manager clone moved to the install copy
 #
 # Author: aav
 # --------------------------------------------------
@@ -23,12 +25,12 @@ bad() {
 # --------------------------------------------------
 # where the switch left things, and the PATH it set up
 # --------------------------------------------------
-cfg=$HOME/.config/home-manager
 vars=$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh
 # the file sources once per login; unset its guard so it sets the vars here
 unset __HM_SESS_VARS_SOURCED
 # shellcheck disable=SC1090
 . "$vars" 2>/dev/null
+cfg=${ARPAD_HOME_CFG:-$HOME/.config/aav/home}
 export PATH="$HOME/.nix-profile/bin:$HOME/.local/bin:$PATH"
 
 # --------------------------------------------------
@@ -98,10 +100,18 @@ for e in "$@"; do
             # a brain command is a wrapper exec-ing a brain script; any other b-* is not the brain's
             c=$(grep -lE 'python3 -I .*/brain-[^/]*\.py' ~/.local/bin/b-* 2>/dev/null)
             [ -z "$c" ] && ok "no b-* command" || bad "b-* installed without a brain: $(echo "$c" | tr '\n' ' ')"
-            [ -z "$(ls -A ~/.claude/skills 2>/dev/null)" ] && ok "no skills linked" || bad "skills linked without a brain"
+            [ -z "$(ls -A ~/.claude/skills 2>/dev/null | grep -vx home-setup)" ] && ok "no skills linked" || bad "skills linked without a brain"
             for v in AAV_BRAIN AVB; do
                 grep -q "\b$v=" "$vars" 2>/dev/null && bad "$v exported without a brain" || ok "no $v"
             done
+            ;;
+        edit=*)
+            want=$(readlink -f "${e#edit=}")/brain
+            [ -n "${AVE:-}" ] && [ "$(readlink -f "$AVE")" = "$want" ] && ok "AVE=$AVE" || bad "AVE is '${AVE:-}', not $want"
+            ;;
+        migrated)
+            [ ! -e ~/.config/home-manager ] && ok "no ~/.config/home-manager" || bad "~/.config/home-manager still there"
+            git -C "$cfg" rev-parse --git-dir >/dev/null 2>&1 && ok "$cfg is a checkout" || bad "$cfg is not a checkout"
             ;;
         *)
             bad "unknown expectation $e"

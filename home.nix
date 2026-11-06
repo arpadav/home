@@ -12,7 +12,11 @@ let
     if builtins.getEnv "HOME" != ""
     then builtins.pathExists path
     else throw "home.nix probes the filesystem to locate your checkout - re-run with --impure";
-  homeCfg = "${config.home.homeDirectory}/.config/home-manager";
+  # --------------------------------------------------
+  # the install copy, everything out-of-store links into
+  # --------------------------------------------------
+  installCopy = import ./install-copy.nix;
+  homeCfg = "${config.home.homeDirectory}/${installCopy}";
   # --------------------------------------------------
   # personal github alias: a `Host aav-github` block in
   # ~/.ssh/config (HostName github.com + the personal
@@ -27,12 +31,14 @@ let
       (line: builtins.match "[[:space:]]*[Hh]ost[[:space:]]+(.*[[:space:]])?${personalSshHost}([[:space:]].*)?" line != null)
       (lib.splitString "\n" (builtins.readFile sshConfig));
   # --------------------------------------------------
-  # dot files
+  # repo files: live off the install copy, else the copy
+  # in the flake source
   # --------------------------------------------------
-  dotfile = rel:
-    if onDisk "${homeCfg}/dotfiles/${rel}"
-    then config.lib.file.mkOutOfStoreSymlink "${homeCfg}/dotfiles/${rel}"
-    else ./dotfiles + "/${rel}";
+  repoFile = rel:
+    if onDisk "${homeCfg}/${rel}"
+    then config.lib.file.mkOutOfStoreSymlink "${homeCfg}/${rel}"
+    else ./. + "/${rel}";
+  dotfile = rel: repoFile "dotfiles/${rel}";
   # --------------------------------------------------
   # misc lang
   # --------------------------------------------------
@@ -44,7 +50,7 @@ let
   # copy, which leaves submodules out. imports cannot see
   # `config`, so the path is built from the login's HOME
   # --------------------------------------------------
-  brainModule = "${builtins.getEnv "HOME"}/.config/home-manager/brain/module.nix";
+  brainModule = "${builtins.getEnv "HOME"}/${installCopy}/brain/module.nix";
 in
 {
   # --------------------------------------------------
@@ -54,7 +60,11 @@ in
   imports = [
     ./aedit/module.nix
     ./repos.nix
-  ] ++ (if builtins.pathExists brainModule then [ brainModule ] else [ ]);
+  ] ++ lib.optionals (builtins.pathExists brainModule) [
+    brainModule
+    # the brain's edit copy is the home edit copy's brain
+    ({ config, ... }: { aav.brain.edit = lib.mapNullable (e: "${e}/brain") config.aav.home.edit; })
+  ];
   warnings = lib.optional (!builtins.pathExists brainModule)
     "brain module not found at ${brainModule} - brain skills and agents are not linked";
 
@@ -86,6 +96,12 @@ in
     ".config/helix/runtime".source = "${pkgs.helix.runtime}";
     ".tmux.conf".source = dotfile "tmux.conf";
     ".local/share/no-agent-summary.js".source = dotfile "no-agent-summary.js";
+    ".local/bin/sy".source = repoFile "bin/sy";
+    # forced: a hand-made link may sit where this goes
+    ".claude/skills/home-setup" = {
+      source = repoFile ".claude/skills/home-setup";
+      force = true;
+    };
     ".config/clangd/config.yaml".text = ''
       If:
         PathMatch: [.*\.cu, .*\.cuh]
@@ -106,49 +122,41 @@ in
     "${cudaShimRel}/surface_functions.h".text = "";
   };
   # --------------------------------------------------
-  # git. the checkout in ~/.config/home-manager (and its
-  # submodules, whose gitdirs live under its .git) is
+  # git. the install copy and the edit copy (and their
+  # submodules, whose gitdirs live under each .git) are
   # personal: commit as arpadav, and route arpadav/ ssh
   # urls through the personal alias when it exists
   # --------------------------------------------------
   programs.git = {
     enable = true;
-    includes = [
-      {
-        condition = "gitdir:${homeCfg}/";
-        contents = {
-          user = {
-            name = "arpadav";
-            email = "arpadav@gmail.com";
-          };
-        } // lib.optionalAttrs hasPersonalSshHost {
-          url."git@${personalSshHost}:arpadav/".insteadOf = "git@github.com:arpadav/";
+    includes = map (copy: {
+      condition = "gitdir:${copy}/";
+      contents = {
+        user = {
+          name = "arpadav";
+          email = "arpadav@gmail.com";
         };
-      }
-    ];
+      } // lib.optionalAttrs hasPersonalSshHost {
+        url."git@${personalSshHost}:arpadav/".insteadOf = "git@github.com:arpadav/";
+      };
+    }) ([ homeCfg ] ++ lib.optional (config.aav.home.edit != null) config.aav.home.edit);
   };
   # --------------------------------------------------
-  # a switch from `github:arpadav/home` leaves no checkout
-  # behind, so `re` would keep pulling from github. clone
-  # one into place so the next `re` builds from it. never
-  # touches an existing path. runs after linkGeneration so
-  # the submodule fetch already sees the git include above.
-  # brain is a private ssh submodule, so a missing key only
-  # warns. cloned over https so it needs no key, then
-  # origin moves to ssh for both fetch and push: b-sync
-  # refuses an origin that fetches and pushes apart
+  # a switch from `github:arpadav/home` leaves no install
+  # copy behind. sy makes one without switching: an old
+  # ~/.config/home-manager clone is moved (`mv`), else
+  # github is cloned without logs. a path already there
+  # is never touched. runs after linkGeneration so the
+  # submodule fetch already sees the git include above.
+  # a brain submodule that cannot be fetched only warns
   # --------------------------------------------------
-  home.activation.homeCfgClone = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-    if [ ! -e "${homeCfg}" ] && [ ! -L "${homeCfg}" ]; then (
-      export PATH="${lib.makeBinPath [ config.programs.git.package pkgs.openssh ]}:$PATH"
-      if run git clone https://github.com/arpadav/home.git "${homeCfg}"; then
-        run git -C "${homeCfg}" remote set-url origin git@github.com:arpadav/home
-        run git -C "${homeCfg}" submodule update --init --recursive \
-          || warnEcho "brain submodule clone failed; run \`git -C ${homeCfg} submodule update --init --recursive\`"
-      else
-        warnEcho "could not clone home flake into ${homeCfg}"
-      fi
-    ) fi
+  home.activation.installCopy = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    if [ ! -e "${homeCfg}" ] && [ ! -L "${homeCfg}" ]; then
+      PATH="${lib.makeBinPath [ config.programs.git.package pkgs.openssh ]}:$PATH" \
+        ARPAD_HOME_CFG="${homeCfg}" \
+        run ${pkgs.bash}/bin/bash ${./bin/sy} --no-pull --no-switch \
+        || warnEcho "could not make the install copy at ${homeCfg} (see sy's output above); run /home-setup"
+    fi
   '';
 
   # --------------------------------------------------
@@ -169,10 +177,11 @@ in
     shellAliases = {
       ls = "eza";
       fed = "curl -fsSL https://arpadvoros.com/ed | sh";
-      re = "home-manager switch --flake \"\$(arpad_flake)#headless\" --impure && unset __HM_SESS_VARS_SOURCED && source \$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh && hash -r";
-      rl = "unset __HM_SESS_VARS_SOURCED && source $HOME/.bashrc && hash -r";
-      pe = "penv $@";
-      hm = "ae $ARPAD_HOME_CFG/home.nix";
+      re = "sy --no-pull && unset __HM_SESS_VARS_SOURCED && source \$HOME/.nix-profile/etc/profile.d/hm-session-vars.sh && hash -r";
+      hm =
+        if config.aav.home.edit != null
+        then "ae ${config.aav.home.edit}/home.nix"
+        else "echo 'no edit copy - run /home-setup' >&2 && false";
       hl = "rg --passthru";
       # --------------------------------------------------
       # tailscale ssh claims :22 on the tailnet address, so
@@ -240,15 +249,6 @@ in
 
       # just completion
       [ -f "$HOME/.config/just/completions/just.bash" ] && . "$HOME/.config/just/completions/just.bash"
-
-      # which flake `re` switches to
-      arpad_flake() {
-        if [ -d "''${ARPAD_HOME_CFG:-}" ]; then
-          printf '%s' "$ARPAD_HOME_CFG"
-        else
-          printf '%s' "github:arpadav/home"
-        fi
-      }
       ''
     ];
   };
@@ -268,7 +268,7 @@ in
   # env vars - guarded via hm-session-vars.sh (once/session)
   # --------------------------------------------------
   home.sessionVariables = {
-    ARPAD_HOME_CFG = "$HOME/.config/home-manager";
+    ARPAD_HOME_CFG = "$HOME/${installCopy}";
     LD_LIBRARY_PATH = "/usr/local/cuda/lib64\${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}";
     C_INCLUDE_PATH = "/usr/include/x86_64-linux-gnu\${C_INCLUDE_PATH:+:$C_INCLUDE_PATH}";
     PKG_CONFIG_PATH = "/usr/lib/x86_64-linux-gnu/pkgconfig\${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}";
