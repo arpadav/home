@@ -147,7 +147,7 @@ in
   # ~/.config/home-manager clone is moved (`mv`), else
   # github is cloned without logs. a path already there
   # is never touched. runs after linkGeneration so the
-  # submodule fetch already sees the git include above.
+  # submodule fetch already sees the git include above
   # a brain submodule that cannot be fetched only warns
   # --------------------------------------------------
   home.activation.installCopy = lib.hm.dag.entryAfter [ "linkGeneration" ] ''

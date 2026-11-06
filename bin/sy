@@ -94,7 +94,7 @@ logs_at_risk() {
 }
 # --------------------------------------------------
 # refuse on anything the logs deinit or a pull would
-# lose, every problem at once, before anything moves.
+# lose, every problem at once, before anything moves
 # checked: the install copy, or the old clone about to
 # become it. brain/logs is reported on its own: it is
 # deinited, never committed here
@@ -132,7 +132,7 @@ if [ "$pull" = 1 ] && [ "$fresh" = 0 ]; then
 fi
 # --------------------------------------------------
 # submodules, recursive, logs skipped: brain first so
-# its config holds the skip before the recursive pass.
+# its config holds the skip before the recursive pass
 # also when the brain was never checked out. a brain
 # that cannot be fetched only warns, and the switch
 # goes on with whatever brain is there
